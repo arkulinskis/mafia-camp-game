@@ -1,8 +1,3 @@
-allow_embedding: false
-package_name: Web_RTC_fun
-name: Web_RTC_fun
-startup_form: Form1
-runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
 dependencies:
 - dep_id: dep_6tt0svugw1lytg
   version: {dev: false}
@@ -14,3 +9,10 @@ services:
 - source: /runtime/services/tables.yml
   client_config: {}
   server_config: {}
+startup: {type: form, module: Form2}
+package_name: Web_RTC_fun
+allow_embedding: false
+name: Web_RTC_fun
+runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
+startup_form: null
+native_deps: {head_html: <div id="video-grid"></div>}
