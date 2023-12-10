@@ -1,5 +1,13 @@
 allow_embedding: false
-package_name: Custom_HTML_4
-name: Custom HTML 4
+package_name: Web_RTC_fun
+name: Web_RTC_fun
+startup_form: Form1
 runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
-services: []
+dependencies:
+- dep_id: dep_6tt0svugw1lytg
+  version: {dev: false}
+  resolution_hints: {app_id: ZKNOF5FRVLPVF4BI, name: HashRouting, package_name: HashRouting}
+services:
+- source: /runtime/services/tables.yml
+  client_config: {}
+  server_config: {}
