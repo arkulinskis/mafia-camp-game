@@ -7,6 +7,9 @@ dependencies:
 - dep_id: dep_6tt0svugw1lytg
   version: {dev: false}
   resolution_hints: {app_id: ZKNOF5FRVLPVF4BI, name: HashRouting, package_name: HashRouting}
+- dep_id: dep_9s0u5d80sbkaw
+  version: {dev: false}
+  resolution_hints: {app_id: C6ZZPAPN4YYF5NVJ, name: Anvil Extras, package_name: anvil_extras}
 services:
 - source: /runtime/services/tables.yml
   client_config: {}
