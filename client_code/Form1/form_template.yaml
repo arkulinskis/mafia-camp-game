@@ -1,0 +1,12 @@
+container: {type: ColumnPanel}
+components:
+- name: signupin
+  properties: {text: Sign Up / Sign In}
+  type: Link
+  layout_properties: {grid_position: 'RNSEDQ,KZXWME'}
+  event_bindings: {click: signupin_click}
+- name: link_1
+  properties: {text: 'Create offer for '}
+  type: Link
+  layout_properties: {grid_position: 'RFPPWF,DFURXD'}
+is_package: true

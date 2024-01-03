@@ -10,13 +10,14 @@ services:
   client_config: {}
   server_config: {}
 - source: /runtime/services/anvil/users.yml
-  client_config: {allow_signup: false, enable_automatically: true, use_email: false,
-    confirm_email: true, use_google: true}
+  client_config: {require_secure_passwords: false, share_login_status: true, use_email: true,
+    allow_remember_me: true, allow_signup: true, enable_automatically: true, confirm_email: false,
+    remember_me_days: 365, use_google: true}
   server_config: {user_table: users}
 - source: /runtime/services/google.yml
   client_config: {}
   server_config: {}
-startup: {type: form, module: Form2}
+startup: {type: form, module: Form1}
 package_name: Web_RTC_fun
 allow_embedding: false
 name: Web_RTC_fun
@@ -51,4 +52,10 @@ db_schema:
     - name: confirmed_email
       admin_ui: {order: 5, width: 200}
       type: bool
+    - name: remembered_logins
+      admin_ui: {order: 6, width: 200}
+      type: simpleObject
+    - name: signed_up
+      admin_ui: {order: 7, width: 200}
+      type: datetime
     title: Users
