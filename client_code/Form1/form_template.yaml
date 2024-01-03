@@ -9,4 +9,5 @@ components:
   properties: {text: 'Create offer for '}
   type: Link
   layout_properties: {grid_position: 'RFPPWF,DFURXD'}
+  event_bindings: {click: link_1_click}
 is_package: true
