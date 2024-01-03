@@ -25,7 +25,7 @@ class Form1(Form1Template):
   def link_1_click(self, **event_args):
     lc = RTCPeerConnection()
     dc = lc.createDataChannel("channel")
-    dc.onmessage(print("just got a message" + e.data))
-    dc.onopen = e => console.log("connection opened!");
+    dc.onmessage = lambda e: print("just got a message" + e.data)
+    dc.onopen = lambda e: print("connection opened!")
     lc.onicecandidate = e => console.log("new Ice candidate! reprinting SDP" + JSON.stringify(lc.localDescription));
     lc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log("set sucessfully!"));
