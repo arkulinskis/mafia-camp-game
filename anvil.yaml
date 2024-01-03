@@ -9,6 +9,10 @@ services:
 - source: /runtime/services/tables.yml
   client_config: {}
   server_config: {}
+- source: /runtime/services/anvil/users.yml
+  client_config: {allow_signup: false, enable_automatically: true, use_email: true,
+    confirm_email: true}
+  server_config: {user_table: users}
 startup: {type: form, module: Form2}
 package_name: Web_RTC_fun
 allow_embedding: false
@@ -21,3 +25,27 @@ native_deps: {head_html: "<script>\n  const lc = new RTCPeerConnection();\nconst
     );\nlc.onicecandidate = e => console.log(\"new Ice candidate! reprinting SDP\"\
     \ + JSON.stringify(lc.localDescription));\nlc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log(\"\
     set sucessfully!\"));\n</script>"}
+db_schema:
+  users:
+    client: none
+    server: full
+    columns:
+    - name: email
+      admin_ui: {order: 0, width: 200}
+      type: string
+    - name: enabled
+      admin_ui: {order: 1, width: 200}
+      type: bool
+    - name: last_login
+      admin_ui: {order: 2, width: 200}
+      type: datetime
+    - name: password_hash
+      admin_ui: {order: 3, width: 200}
+      type: string
+    - name: n_password_failures
+      admin_ui: {order: 4, width: 200}
+      type: number
+    - name: confirmed_email
+      admin_ui: {order: 5, width: 200}
+      type: bool
+    title: Users

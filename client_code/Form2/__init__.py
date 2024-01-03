@@ -1,5 +1,9 @@
 from ._anvil_designer import Form2Template
 from anvil import *
+import anvil.tables as tables
+import anvil.tables.query as q
+from anvil.tables import app_tables
+import anvil.users
 
 class Form2(Form2Template):
   def __init__(self, **properties):
