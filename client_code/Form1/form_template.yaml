@@ -10,4 +10,9 @@ components:
   type: Link
   layout_properties: {grid_position: 'RFPPWF,DFURXD'}
   event_bindings: {click: link_1_click}
+- name: link_2
+  properties: {text: Receive offer}
+  type: Link
+  layout_properties: {grid_position: 'TDSZLJ,RVXVSK'}
+  event_bindings: {click: link_2_click}
 is_package: true
