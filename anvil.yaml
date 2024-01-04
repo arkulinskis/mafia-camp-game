@@ -23,13 +23,9 @@ allow_embedding: false
 name: Web_RTC_fun
 runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
 startup_form: null
-native_deps: {head_html: "<script>\nfunction create_offer(){\n  const lc = new RTCPeerConnection();\n\
-    \  const dc = lc.createDataChannel(\"channel\");\n  dc.onmessage = e => console.log(\"\
-    just got a message\" + e.data);\n  dc.onopen = e => console.log(\"connection opened!\"\
-    );\n  lc.onicecandidate = e => console.log(\"new Ice candidate! reprinting SDP\"\
-    \ + JSON.stringify(lc.localDescription));\n  lc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log(\"\
-    set sucessfully!\"));\n}\n\nfunction respond_with_created_offer(){\n  anvil.call($('.'))\n\
-    }\n</script>"}
+native_deps: {head_html: '<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    '}
 db_schema:
   users:
     client: none
@@ -65,4 +61,10 @@ db_schema:
     - name: offer2
       admin_ui: {width: 200, order: 9}
       type: simpleObject
+    - name: peer_id
+      admin_ui: {width: 200, order: 10}
+      type: simpleObject
+    - name: peer_id_str
+      admin_ui: {width: 200, order: 11}
+      type: string
     title: Users

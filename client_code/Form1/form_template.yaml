@@ -15,4 +15,22 @@ components:
   type: Link
   layout_properties: {grid_position: 'TDSZLJ,RVXVSK'}
   event_bindings: {click: link_2_click}
+- name: link_4
+  properties: {text: connect to peer}
+  type: Link
+  layout_properties: {grid_position: 'ALLYRR,QOSPSO'}
+  event_bindings: {click: link_4_click}
+- name: text_box_1
+  properties: {}
+  type: TextBox
+  layout_properties: {grid_position: 'SXSECE,KMCWEY'}
+- name: link_3
+  properties: {text: send message}
+  type: Link
+  layout_properties: {grid_position: 'SXSECE,ZXQKTS'}
+  event_bindings: {click: link_3_click}
+- name: label_1
+  properties: {}
+  type: Label
+  layout_properties: {grid_position: 'SAICGG,KCBFDH'}
 is_package: true
