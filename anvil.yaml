@@ -61,6 +61,9 @@ db_schema:
     - name: user_name
       admin_ui: {width: 200, order: 9}
       type: string
+    - name: user_id
+      admin_ui: {width: 200, order: 10}
+      type: string
     title: Users
   friendships:
     client: none
@@ -69,11 +72,11 @@ db_schema:
     - name: id
       admin_ui: {width: 200, order: 0}
       type: string
-    - name: user1_email
-      admin_ui: {width: 200, order: 1}
+    - name: user_id_2
+      admin_ui: {order: 2.5, width: 200}
       type: string
-    - name: user2_email
-      admin_ui: {width: 200, order: 2}
+    - name: user_id_1
+      admin_ui: {order: 2, width: 200}
       type: string
     - name: status
       admin_ui: {width: 200, order: 3}

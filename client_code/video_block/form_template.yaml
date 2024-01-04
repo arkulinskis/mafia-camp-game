@@ -1,0 +1,6 @@
+container:
+  type: HtmlTemplate
+  properties: {html: '@theme:video.html'}
+components: []
+is_package: true
+custom_component: true
