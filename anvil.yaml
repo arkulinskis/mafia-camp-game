@@ -55,16 +55,33 @@ db_schema:
     - name: signed_up
       admin_ui: {order: 7, width: 200}
       type: datetime
-    - name: offer
-      admin_ui: {width: 200, order: 8}
-      type: string
-    - name: offer2
-      admin_ui: {width: 200, order: 9}
-      type: simpleObject
-    - name: peer_id
-      admin_ui: {width: 200, order: 10}
-      type: simpleObject
     - name: peer_id_str
-      admin_ui: {width: 200, order: 11}
+      admin_ui: {order: 8, width: 276}
+      type: string
+    - name: user_name
+      admin_ui: {width: 200, order: 9}
       type: string
     title: Users
+  friendships:
+    client: none
+    server: full
+    columns:
+    - name: id
+      admin_ui: {width: 200, order: 0}
+      type: string
+    - name: user1_email
+      admin_ui: {width: 200, order: 1}
+      type: string
+    - name: user2_email
+      admin_ui: {width: 200, order: 2}
+      type: string
+    - name: status
+      admin_ui: {width: 200, order: 3}
+      type: string
+    - name: request_date
+      admin_ui: {width: 200, order: 4}
+      type: datetime
+    - name: status_date
+      admin_ui: {width: 200, order: 5}
+      type: datetime
+    title: Friendships
