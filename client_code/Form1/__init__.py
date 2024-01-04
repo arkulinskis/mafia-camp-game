@@ -7,7 +7,10 @@ import anvil.tables as tables
 import anvil.tables.query as q
 from anvil.tables import app_tables
 
-from anvil.js.window import RTCPeerConnection
+import json
+import time
+
+from anvil.js.window import RTCPeerConnection, console
 
 class Form1(Form1Template):
   def __init__(self, **properties):
@@ -23,9 +26,14 @@ class Form1(Form1Template):
       anvil.users.logout()
 
   def link_1_click(self, **event_args):
-    lc = RTCPeerConnection()
+    lc =  RTCPeerConnection()
     dc = lc.createDataChannel("channel")
     dc.onmessage = lambda e: print("just got a message" + e.data)
     dc.onopen = lambda e: print("connection opened!")
-    lc.onicecandidate = e => console.log("new Ice candidate! reprinting SDP" + JSON.stringify(lc.localDescription));
-    lc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log("set sucessfully!"));
+    lc.onicecandidate = lambda e: print("new Ice candidate! reprinting SDP -- " + str(lc.localDescription.sdp) + " -- " + str(lc.localDescription.toJSON))
+    o = lc.createOffer()
+    time.sleep(5)
+    lc.setLocalDescription(o)
+    time.sleep(2)
+    print("set sucessfully!")
+    console.log(lc)

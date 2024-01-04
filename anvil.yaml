@@ -23,12 +23,13 @@ allow_embedding: false
 name: Web_RTC_fun
 runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
 startup_form: null
-native_deps: {head_html: "<script>\n  const lc = new RTCPeerConnection();\nconst dc\
-    \ = lc.createDataChannel(\"channel\");\ndc.onmessage = e => console.log(\"just\
-    \ got a message\" + e.data);\ndc.onopen = e => console.log(\"connection opened!\"\
-    );\nlc.onicecandidate = e => console.log(\"new Ice candidate! reprinting SDP\"\
-    \ + JSON.stringify(lc.localDescription));\nlc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log(\"\
-    set sucessfully!\"));\n</script>"}
+native_deps: {head_html: "<script>\nfunction create_offer(){\n  const lc = new RTCPeerConnection();\n\
+    \  const dc = lc.createDataChannel(\"channel\");\n  dc.onmessage = e => console.log(\"\
+    just got a message\" + e.data);\n  dc.onopen = e => console.log(\"connection opened!\"\
+    );\n  lc.onicecandidate = e => console.log(\"new Ice candidate! reprinting SDP\"\
+    \ + JSON.stringify(lc.localDescription));\n  lc.createOffer().then(o => lc.setLocalDescription(o)).then(a=>console.log(\"\
+    set sucessfully!\"));\n}\n\nfunction respond_with_created_offer(){\n  anvil.call($('.'))\n\
+    }\n</script>"}
 db_schema:
   users:
     client: none
