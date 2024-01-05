@@ -7,7 +7,7 @@ const remoteVideo = document.getElementById('remoteVideo');
 async function start() {
     try {
         // Get local media stream (video and audio)
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localStream = await navigator.mediaDevices.getUserMedia({ "video": True, "audio": True });
         localVideo.srcObject = localStream;
 
         // Create RTCPeerConnection

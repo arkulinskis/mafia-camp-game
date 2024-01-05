@@ -1,13 +1,13 @@
-from anvil import users, tables
+from anvil import server, users, tables
 
-@anvil.server.callable
+@server.callable
 def set_peer_id(peer_id):
-  user = anvil.users.get_user()
+  user = users.get_user()
   if user is not None: tables.app_tables.users.get(email=user['email'], signed_up=user['signed_up'])['peer_id_str'] = peer_id
 
-@anvil.server.callable
+@server.callable
 def get_peer_id():
-  user=anvil.users.get_user()
+  user=users.get_user()
   if user is not None:
     rows = tables.app_tables.users.search()
     return_array = []
@@ -17,32 +17,7 @@ def get_peer_id():
     return return_array
 
 
-@anvil.server.callable
-def a():
-  pass
-
-
-@anvil.server.callable
-def a():
-  pass
-
-
-@anvil.server.callable
-def a():
-  pass
-
-
-@anvil.server.callable
-def a():
-  pass
-
-
-@anvil.server.callable
-def a():
-  pass
-
-
-@anvil.server.callable
+@server.callable
 def a():
   pass
 

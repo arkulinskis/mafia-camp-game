@@ -23,9 +23,9 @@ allow_embedding: false
 name: Web_RTC_fun
 runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
 startup_form: null
-native_deps: {head_html: '<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-    '}
+native_deps: {head_html: "<script src=\"https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js\"\
+    ></script>\n\n<script>\nfunction start_stream() {\n  var localStream = navigator.mediaDevices.getUserMedia({\
+    \ video: true, audio: true });\n  return localStream;\n}\n</script>"}
 db_schema:
   users:
     client: none

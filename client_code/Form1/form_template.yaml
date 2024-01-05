@@ -10,6 +10,11 @@ components:
   type: Link
   layout_properties: {grid_position: 'ALLYRR,QOSPSO'}
   event_bindings: {click: link_4_click}
+- name: link_1
+  properties: {text: call peer}
+  type: Link
+  layout_properties: {grid_position: 'IQEQFY,NSKTNB'}
+  event_bindings: {click: link_1_click}
 - name: text_box_1
   properties: {}
   type: TextBox
@@ -23,4 +28,12 @@ components:
   properties: {}
   type: Label
   layout_properties: {grid_position: 'SAICGG,KCBFDH'}
+- name: vb_me
+  properties: {}
+  type: form:video_block
+  layout_properties: {grid_position: 'KBFDYN,RYYOPO'}
+- name: vb_them
+  properties: {}
+  type: form:video_block
+  layout_properties: {grid_position: 'KBFDYN,FQEWCX'}
 is_package: true
