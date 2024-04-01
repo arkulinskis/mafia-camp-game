@@ -1,6 +1,6 @@
 from ._anvil_designer import Form1Template
 from anvil import server, users, js
-from anvil.js.window import console, Peer, navigator
+from anvil.js.window import console, Peer, navigator, console
 
 class Form1(Form1Template):
   def __init__(self, **properties):
