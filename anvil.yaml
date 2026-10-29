@@ -23,6 +23,80 @@ db_schema:
       type: datetime
     server: full
     title: Friendships
+  players:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: room
+      target: rooms
+      type: link_single
+    - admin_ui: {order: 1, width: 200}
+      name: pid
+      type: string
+    - admin_ui: {order: 2, width: 200}
+      name: token
+      type: string
+    - admin_ui: {order: 3, width: 200}
+      name: name
+      type: string
+    - admin_ui: {order: 4, width: 200}
+      name: seat
+      type: number
+    - admin_ui: {order: 5, width: 200}
+      name: peer_id
+      type: string
+    - admin_ui: {order: 5.5, width: 200}
+      name: media
+      type: string
+    - admin_ui: {order: 6, width: 200}
+      name: joined
+      type: datetime
+    - admin_ui: {order: 7, width: 200}
+      name: last_seen
+      type: datetime
+    - admin_ui: {order: 8, width: 200}
+      name: left
+      type: bool
+    server: full
+    title: Players
+  rooms:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: code
+      type: string
+    - admin_ui: {order: 1, width: 200}
+      name: created
+      type: datetime
+    - admin_ui: {order: 2, width: 200}
+      name: touched
+      type: datetime
+    - admin_ui: {order: 3, width: 200}
+      name: host
+      type: string
+    - admin_ui: {order: 4, width: 200}
+      name: phase
+      type: string
+    - admin_ui: {order: 5, width: 200}
+      name: phase_started
+      type: datetime
+    - admin_ui: {order: 6, width: 200}
+      name: phase_ends
+      type: datetime
+    - admin_ui: {order: 7, width: 200}
+      name: day
+      type: number
+    - admin_ui: {order: 8, width: 200}
+      name: version
+      type: number
+    - admin_ui: {order: 9, width: 200}
+      name: settings
+      type: simpleObject
+    - admin_ui: {order: 10, width: 200}
+      name: game
+      type: simpleObject
+    server: full
+    title: Rooms
   users:
     client: none
     columns:
@@ -59,26 +133,46 @@ db_schema:
     - admin_ui: {order: 10, width: 200}
       name: user_id
       type: string
+    - admin_ui: {order: 11, width: 200}
+      name: legal_version
+      type: string
+    - admin_ui: {order: 12, width: 200}
+      name: legal_accepted_at
+      type: datetime
+    - admin_ui: {order: 13, width: 200}
+      name: legal_source
+      type: string
     server: full
     title: Users
-dependencies:
-- dep_id: dep_6tt0svugw1lytg
-  resolution_hints: {app_id: ZKNOF5FRVLPVF4BI, name: HashRouting, package_name: HashRouting}
-  version: {dev: false}
-- dep_id: dep_9s0u5d80sbkaw
-  resolution_hints: {app_id: C6ZZPAPN4YYF5NVJ, name: Anvil Extras, package_name: anvil_extras}
-  version: {dev: false}
 name: mafia-camp-game
 native_deps:
   head_html: |-
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
+    <script src="_/theme/legal-kit.js?v=26d7577aee"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0d1530">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link id="mc-favicon" rel="icon" type="image/svg+xml" href="_/theme/favicon.svg?v=1">
+    <link rel="apple-touch-icon" href="_/theme/apple-touch-icon.png?v=1">
+    <link rel="stylesheet" href="_/theme/mafia.css?v=1">
+    <script src="_/theme/peerjs.min.js?v=1.5.2"></script>
+    <script src="_/theme/mafia.js?v=1"></script>
     <script>
-    function start_stream() {
-      var localStream = navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      return localStream;
-    }
+    /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
+    (function () {
+      function keep() {
+        var ours = document.getElementById('mc-favicon');
+        if (!ours) return;
+        document.querySelectorAll('link[rel~="icon"]').forEach(function (l) { if (l !== ours) l.remove(); });
+      }
+      keep();
+      document.addEventListener('DOMContentLoaded', keep);
+      window.addEventListener('load', keep);
+    })();
     </script>
+    <style>html, body { background: #0d1530; margin: 0; }</style>
 package_name: mafia_camp_game
 runtime_options:
   client_version: '3'
@@ -97,3 +191,7 @@ services:
   source: /runtime/services/google.yml
 startup: {module: Form1, type: form}
 startup_form: null
+metadata:
+  description: A video party game for up to 10 friends. Roles, secrets, a campfire and one question - who is the Mafia?
+  logo_img: asset:logo.png
+  title: Mafia Camp

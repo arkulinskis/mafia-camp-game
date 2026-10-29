@@ -1,88 +1,35 @@
-# About This [Anvil](https://anvil.works/?utm_source=github:app_README) App
+# Mafia Camp
 
-### Build web apps with nothing but Python.
+A video party game for 3 to 10 friends, built on [Anvil](https://anvil.works). Everyone joins one small-tile video call straight from the browser, gets a secret role, and plays Mafia (Werewolf) at Camp Moonlake: the Mafia strike at night, the camp argues it out on camera by day and votes someone onto the bus home.
 
-The app in this repository is built with [Anvil](https://anvil.works?utm_source=github:app_README), the framework for building web apps with nothing but Python. You can clone this app into your own Anvil account to use and modify.
+## Features
 
-Below, you will find:
-- [How to open this app](#opening-this-app-in-anvil-and-getting-it-online) in Anvil and deploy it online
-- Information [about Anvil](#about-anvil)
-- And links to some handy [documentation and tutorials](#tutorials-and-documentation)
+- **No accounts.** Start a camp, share its 4-letter code or invite link (`…/#ABCD`), type a name, play. A reload keeps your seat and your role.
+- **10-way video + voice, peer to peer.** Every browser connects directly to every other one with WebRTC (PeerJS). Anvil is only the broker: it hands out each player's PeerJS id. Video is 320×240 at 15 fps, capped around 150–180 kbps per connection, so a full camp needs about 1.5 Mbps upload per person. Tested locally with 10 browsers: all 90 connections up in 4 seconds.
+- **The call follows the game.** Each browser decides what it sends to whom (`RTCRtpSender.replaceTrack`):
+  - lobby, role reveal, game over: everyone sees and hears everyone;
+  - night: Campers go dark; the Mafia see and hear only each other (and the ghosts can watch them);
+  - day: everyone alive is on camera;
+  - ghosts (players who are out, and late joiners) talk only with other ghosts.
+- **Roles:** the Mafia (1 for 3–5 players, 2 for 6–9, 3 for 10), Camp Nurse (protects one camper a night, not the same twice in a row), Ranger (investigates one camper a night), Campers, and an optional Prankster (7+, wins by getting voted out).
+- **Phases:** roles → night → dawn (the news) → day (talk; "Ready to vote" with a majority skips ahead) → vote (open votes, live tallies on the tiles, ties and "skip" send nobody home) → verdict → … until the Campers or the Mafia win.
+- **Host controls:** talk/night/vote times, reveal roles on death, Prankster on/off, skip ahead, send a player home, play again. If the host disappears, the longest-present player takes over.
+- **Look:** the sky follows the game (dusk campfire, starry night, dawn, daylight), speaking glow on tiles, sleeping/ghost covers, phase chimes, confetti for the winners, a tent-under-the-moon icon and matching loading spinner. Phone first; desktop puts the panel beside the grid.
+- Privacy & Terms from the shared Arkvital legal kit (camera/mic, peer-to-peer video, PeerJS relay, 24-hour camp clean-up).
 
-## Opening this app in Anvil and getting it online
+## How it's built
 
-### Cloning the app
+```
+client_code/Form1/       mounts window.MafiaCamp (theme/assets/mafia.js) and bridges it to the server
+server_code/game.py      every game rule: one callable mc_api(action, payload_json)
+theme/assets/mafia.js    the interface + the WebRTC mesh (PeerJS)
+theme/assets/mafia.css   the design (sky themes)
+theme/assets/peerjs.min.js  PeerJS 1.5.2, served with the app
+tests/                   server tests on the Anvil mock + a real 10-browser WebRTC test
+```
 
-Go to the [Anvil Editor](https://anvil.works/build?utm_source=github:app_README) (you might need to sign up for a free account) and click on “Clone from GitHub” (underneath the “Blank App” option):
+Tables: `rooms` (code, host, phase + timer, settings, the whole game as one simpleObject) and `players` (room, secret token, public pid, name, seat, PeerJS id, mic/cam state, last seen). Camps untouched for 24 hours are deleted when a new camp starts.
 
-<img src="https://anvil.works/docs/version-control-new-ide/img/git/clone-from-github.png" alt="Clone from GitHub"/>
+## Opening it in Anvil
 
-Enter the URL of this GitHub repository. If you're not yet logged in, choose "GitHub credentials" as the authentication method and click "Connect to GitHub".
-
-<img src="https://anvil.works/docs/version-control-new-ide/img/git/clone-app-from-git.png" alt="Clone App from Git modal"/>
-
-Finally, click "Clone App".
-
-This app will then be in your Anvil account, ready for you to run it or start editing it! **Any changes you make will be automatically pushed back to this repository, if you have permission!** You might want to [make a new branch](https://anvil.works/docs/version-control-new-ide?utm_source=github:app_README).
-
-### Running the app yourself:
-
-Find the **Run** button at the top-right of the Anvil editor:
-
-<img src="https://anvil.works/docs/img/run-button-new-ide.png"/>
-
-
-### Publishing the app on your own URL
-
-Now you've cloned the app, you can [deploy it on the internet with two clicks](https://anvil.works/docs/deployment/quickstart?utm_source=github:app_README)! Find the **Publish** button at the top-right of the editor:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/environments/publish-button.png"/>
-
-When you click it, you will see the Publish dialog:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/quickstart/empty-environments-dialog.png"/>
-
-Click **Publish This App**, and you will see that your app has been deployed at a new, public URL:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/quickstart/default-public-environment.png"/>
-
-That's it - **your app is now online**. Click the link and try it!
-
-## About Anvil
-
-If you’re new to Anvil, welcome! Anvil is a platform for building full-stack web apps with nothing but Python. No need to wrestle with JS, HTML, CSS, Python, SQL and all their frameworks – just build it all in Python.
-
-<figure>
-<figcaption><h3>Learn About Anvil In 80 Seconds👇</h3></figcaption>
-<a href="https://www.youtube.com/watch?v=3V-3g1mQ5GY" target="_blank">
-<img
-  src="https://anvil-website-static.s3.eu-west-2.amazonaws.com/anvil-in-80-seconds-YouTube.png"
-  alt="Anvil In 80 Seconds"
-/>
-</a>
-</figure>
-<br><br>
-
-[![Try Anvil Free](https://anvil-website-static.s3.eu-west-2.amazonaws.com/mark-complete.png)](https://anvil.works?utm_source=github:app_README)
-
-To learn more about Anvil, visit [https://anvil.works](https://anvil.works?utm_source=github:app_README).
-
-## Tutorials and documentation
-
-### Tutorials
-
-If you are just starting out with Anvil, why not **[try the 10-minute Feedback Form tutorial](https://anvil.works/learn/tutorials/feedback-form?utm_source=github:app_README)**? It features step-by-step tutorials that will introduce you to the most important parts of Anvil.
-
-Anvil has tutorials on:
-- [Building Dashboards](https://anvil.works/learn/tutorials/data-science#dashboarding?utm_source=github:app_README)
-- [Multi-User Applications](https://anvil.works/learn/tutorials/multi-user-apps?utm_source=github:app_README)
-- [Building Web Apps with an External Database](https://anvil.works/learn/tutorials/external-database?utm_source=github:app_README)
-- [Deploying Machine Learning Models](https://anvil.works/learn/tutorials/deploy-machine-learning-model?utm_source=github:app_README)
-- [Taking Payments with Stripe](https://anvil.works/learn/tutorials/stripe?utm_source=github:app_README)
-- And [much more....](https://anvil.works/learn/tutorials?utm_source=github:app_README)
-
-### Reference Documentation
-
-The Anvil reference documentation provides comprehensive information on how to use Anvil to build web applications. You can find the documentation [here](https://anvil.works/docs/overview?utm_source=github:app_README).
-
-If you want to get to the basics as quickly as possible, each section of this documentation features a [Quick-Start Guide](https://anvil.works/docs/overview/quickstarts?utm_source=github:app_README).
+Anvil editor → Create app → **Clone from GitHub** → this repo's URL. After pulling a version with new tables, accept the **Schema Mismatch** alert with "The schema of the source code is correct".
