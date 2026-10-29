@@ -1,39 +1,39 @@
-container: {type: ColumnPanel}
 components:
-- name: signupin
+- event_bindings: {click: signupin_click}
+  layout_properties: {grid_position: 'RNSEDQ,KZXWME'}
+  name: signupin
   properties: {text: Sign Up / Sign In}
   type: Link
-  layout_properties: {grid_position: 'RNSEDQ,KZXWME'}
-  event_bindings: {click: signupin_click}
-- name: link_4
+- event_bindings: {click: link_4_click}
+  layout_properties: {grid_position: 'ALLYRR,QOSPSO'}
+  name: link_4
   properties: {text: connect to peer}
   type: Link
-  layout_properties: {grid_position: 'ALLYRR,QOSPSO'}
-  event_bindings: {click: link_4_click}
-- name: link_1
+- event_bindings: {click: link_1_click}
+  layout_properties: {grid_position: 'IQEQFY,NSKTNB'}
+  name: link_1
   properties: {text: call peer}
   type: Link
-  layout_properties: {grid_position: 'IQEQFY,NSKTNB'}
-  event_bindings: {click: link_1_click}
-- name: text_box_1
+- layout_properties: {grid_position: 'SXSECE,KMCWEY'}
+  name: text_box_1
   properties: {}
   type: TextBox
-  layout_properties: {grid_position: 'SXSECE,KMCWEY'}
-- name: link_3
+- event_bindings: {click: link_3_click}
+  layout_properties: {grid_position: 'SXSECE,ZXQKTS'}
+  name: link_3
   properties: {text: send message}
   type: Link
-  layout_properties: {grid_position: 'SXSECE,ZXQKTS'}
-  event_bindings: {click: link_3_click}
-- name: label_1
+- layout_properties: {grid_position: 'SAICGG,KCBFDH'}
+  name: label_1
   properties: {}
   type: Label
-  layout_properties: {grid_position: 'SAICGG,KCBFDH'}
-- name: vb_me
+- layout_properties: {grid_position: 'KBFDYN,RYYOPO'}
+  name: vb_me
   properties: {}
   type: form:video_block
-  layout_properties: {grid_position: 'KBFDYN,RYYOPO'}
-- name: vb_them
+- layout_properties: {grid_position: 'KBFDYN,FQEWCX'}
+  name: vb_them
   properties: {}
   type: form:video_block
-  layout_properties: {grid_position: 'KBFDYN,FQEWCX'}
+container: {type: ColumnPanel}
 is_package: true

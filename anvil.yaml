@@ -1,90 +1,99 @@
-dependencies:
-- dep_id: dep_6tt0svugw1lytg
-  version: {dev: false}
-  resolution_hints: {app_id: ZKNOF5FRVLPVF4BI, name: HashRouting, package_name: HashRouting}
-- dep_id: dep_9s0u5d80sbkaw
-  version: {dev: false}
-  resolution_hints: {app_id: C6ZZPAPN4YYF5NVJ, name: Anvil Extras, package_name: anvil_extras}
-services:
-- source: /runtime/services/tables.yml
-  client_config: {}
-  server_config: {}
-- source: /runtime/services/anvil/users.yml
-  client_config: {require_secure_passwords: false, share_login_status: true, use_email: true,
-    allow_remember_me: true, allow_signup: true, enable_automatically: true, confirm_email: false,
-    remember_me_days: 365, use_google: true}
-  server_config: {user_table: users}
-- source: /runtime/services/google.yml
-  client_config: {}
-  server_config: {}
-startup: {type: form, module: Form1}
-package_name: Web_RTC_fun
 allow_embedding: false
-name: Web_RTC_fun
-runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
-startup_form: null
-native_deps: {head_html: "<script src=\"https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js\"\
-    ></script>\n\n<script>\nfunction start_stream() {\n  var localStream = navigator.mediaDevices.getUserMedia({\
-    \ video: true, audio: true });\n  return localStream;\n}\n</script>"}
 db_schema:
-  users:
-    client: none
-    server: full
-    columns:
-    - name: email
-      admin_ui: {order: 0, width: 200}
-      type: string
-    - name: enabled
-      admin_ui: {order: 1, width: 200}
-      type: bool
-    - name: last_login
-      admin_ui: {order: 2, width: 200}
-      type: datetime
-    - name: password_hash
-      admin_ui: {order: 3, width: 200}
-      type: string
-    - name: n_password_failures
-      admin_ui: {order: 4, width: 200}
-      type: number
-    - name: confirmed_email
-      admin_ui: {order: 5, width: 200}
-      type: bool
-    - name: remembered_logins
-      admin_ui: {order: 6, width: 200}
-      type: simpleObject
-    - name: signed_up
-      admin_ui: {order: 7, width: 200}
-      type: datetime
-    - name: peer_id_str
-      admin_ui: {order: 8, width: 276}
-      type: string
-    - name: user_name
-      admin_ui: {width: 200, order: 9}
-      type: string
-    - name: user_id
-      admin_ui: {width: 200, order: 10}
-      type: string
-    title: Users
   friendships:
     client: none
-    server: full
     columns:
-    - name: id
-      admin_ui: {width: 200, order: 0}
+    - admin_ui: {order: 0, width: 200}
+      name: id
       type: string
-    - name: user_id_2
-      admin_ui: {order: 2.5, width: 200}
+    - admin_ui: {order: 2.5, width: 200}
+      name: user_id_2
       type: string
-    - name: user_id_1
-      admin_ui: {order: 2, width: 200}
+    - admin_ui: {order: 2, width: 200}
+      name: user_id_1
       type: string
-    - name: status
-      admin_ui: {width: 200, order: 3}
+    - admin_ui: {order: 3, width: 200}
+      name: status
       type: string
-    - name: request_date
-      admin_ui: {width: 200, order: 4}
+    - admin_ui: {order: 4, width: 200}
+      name: request_date
       type: datetime
-    - name: status_date
-      admin_ui: {width: 200, order: 5}
+    - admin_ui: {order: 5, width: 200}
+      name: status_date
       type: datetime
+    server: full
     title: Friendships
+  users:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: email
+      type: string
+    - admin_ui: {order: 1, width: 200}
+      name: enabled
+      type: bool
+    - admin_ui: {order: 2, width: 200}
+      name: last_login
+      type: datetime
+    - admin_ui: {order: 3, width: 200}
+      name: password_hash
+      type: string
+    - admin_ui: {order: 4, width: 200}
+      name: n_password_failures
+      type: number
+    - admin_ui: {order: 5, width: 200}
+      name: confirmed_email
+      type: bool
+    - admin_ui: {order: 6, width: 200}
+      name: remembered_logins
+      type: simpleObject
+    - admin_ui: {order: 7, width: 200}
+      name: signed_up
+      type: datetime
+    - admin_ui: {order: 8, width: 276}
+      name: peer_id_str
+      type: string
+    - admin_ui: {order: 9, width: 200}
+      name: user_name
+      type: string
+    - admin_ui: {order: 10, width: 200}
+      name: user_id
+      type: string
+    server: full
+    title: Users
+dependencies:
+- dep_id: dep_6tt0svugw1lytg
+  resolution_hints: {app_id: ZKNOF5FRVLPVF4BI, name: HashRouting, package_name: HashRouting}
+  version: {dev: false}
+- dep_id: dep_9s0u5d80sbkaw
+  resolution_hints: {app_id: C6ZZPAPN4YYF5NVJ, name: Anvil Extras, package_name: anvil_extras}
+  version: {dev: false}
+name: mafia-camp-game
+native_deps:
+  head_html: |-
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <script>
+    function start_stream() {
+      var localStream = navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      return localStream;
+    }
+    </script>
+package_name: mafia_camp_game
+runtime_options:
+  client_version: '3'
+  server_spec: {}
+  server_version: python3-full
+  version: 2
+services:
+- client_config: {}
+  server_config: {}
+  source: /runtime/services/tables.yml
+- client_config: {allow_remember_me: true, allow_signup: true, confirm_email: false, enable_automatically: true, remember_me_days: 365, require_secure_passwords: false, share_login_status: true, use_email: true, use_google: true}
+  server_config: {user_table: users}
+  source: /runtime/services/anvil/users.yml
+- client_config: {}
+  server_config: {}
+  source: /runtime/services/google.yml
+startup: {module: Form1, type: form}
+startup_form: null

@@ -1,11 +1,12 @@
 unique_ids:
-  forms:
-    Form1: '1704292348700473950681234.98987'
-    video_block: '1704402413943720653769978.3295'
-  modules: {}
-  server_modules:
-    servercode: '1704340462454290738921009.86475'
   assets:
     app.js: '1702236600574456104120532.3533'
     theme.css: C3IKKDZ4P45BMYOTBG37HKAF26ZHLRNY
     video.html: '1704402398862716950921140.0919'
+  forms:
+    Form1: '1704292348700473950681234.98987'
+    video_block: '1704402413943720653769978.3295'
+  modules: {}
+  scripts: {}
+  server_modules:
+    servercode: '1704340462454290738921009.86475'
