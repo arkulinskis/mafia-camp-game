@@ -147,6 +147,8 @@ db_schema:
 name: mafia-camp-game
 native_deps:
   head_html: |-
+    <!-- Prepsto feedback panel: the footer's Suggest an idea link (data-prepsto-open) opens it -->
+    <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="8ta2479" data-button="false" data-label="Suggest an idea" async></script>
     <script src="_/theme/legal-kit.js?v=26d7577aee"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0d1530">

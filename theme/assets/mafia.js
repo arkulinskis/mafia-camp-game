@@ -515,6 +515,7 @@
           h('li', null, h('b', null, 'Ghosts'), ' (players who are out) keep watching, and can whisper with other ghosts.'))),
       h('footer', { class: 'foot' },
         h('span', null, '© Arkvital'),
+        h('a', { class: 'link', href: 'https://prepsto.com/#f/8ta2479', target: '_blank', rel: 'noopener', 'data-prepsto-open': 'open' }, 'Suggest an idea'),
         h('button', { class: 'link', 'data-lk-open': 'overview', type: 'button' }, 'Privacy & Terms'))));
     if (!nameInput.value) setTimeout(function () { nameInput.focus(); }, 50);
   }
