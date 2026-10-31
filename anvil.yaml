@@ -147,7 +147,7 @@ db_schema:
 name: mafia-camp-game
 native_deps:
   head_html: |-
-    <script src="_/theme/legal-kit.js?v=26d7577aee"></script>
+    <script src="_/theme/legal-kit.js?v=d8eeaf06c4"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0d1530">
     <meta name="apple-mobile-web-app-capable" content="yes">
