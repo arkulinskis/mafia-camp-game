@@ -8,7 +8,7 @@ description: Context, workflow and recipes for Mafia Camp (repo arkulinskis/mafi
 **What it is:** 3–10 friends join a "camp" by 4-letter code (no accounts), sit in one small-tile video call (320×240, voice on), get secret roles (Mafia, Camp Nurse, Ranger, Camper, optional Prankster) and play day/night cycles: night actions, dawn news, talk, open vote, verdict, until the Campers or the Mafia win. The call follows the rules: at night Campers go dark and the Mafia see/hear only each other; ghosts talk only to ghosts.
 
 **Where it lives:**
-- Repo **github.com/arkulinskis/mafia-camp-game**, branch `master`; Anvil pulls master. This folder **is** the Anvil repo ("git" layout). Live URL: not known yet (ask the user; then update apps.json `url` and legal-kit/apps/mafiacamp.json `url`, rebuild + install the kit).
+- Repo **github.com/arkulinskis/mafia-camp-game**, branch `master`; Anvil pulls master. This folder **is** the Anvil repo ("git" layout). Live at: **https://mafia-camp-game.anvil.app**, published 2026-10-31.
 - Born from the user's 2024 experiment: PeerJS in the browser + Anvil table storing peer ids ("it really works between two computers"). Keep that architecture.
 
 **What the user wants:** "be creative, assume things". A fun, distinctive look; phone first (390px); 10 people on very small tiles with voice.
