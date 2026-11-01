@@ -150,6 +150,27 @@ native_deps:
     <!-- Prepsto feedback panel (the only feedback channel): every Submit feedback link (data-prepsto-open) opens it -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="8ta2479" data-button="false" data-label="Submit feedback" async></script>
     <script src="_/theme/legal-kit.js?v=260f34e225"></script>
+    <!-- seo:start (APP_MAKER/seo: edit seo/apps/mafiacamp.json and run seo.py, not here) -->
+    <link rel="canonical" href="https://mafia-camp-game.anvil.app/">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="keywords" content="online Mafia game, Werewolf game online, video party game, social deduction game, game night with friends online, party game on video call, play Mafia with friends, no download party game, browser party game">
+    <meta name="author" content="Arkvital">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mafia Camp">
+    <meta property="og:title" content="Mafia Camp: a video party game of Mafia for 3 to 10 friends">
+    <meta property="og:description" content="A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts.">
+    <meta property="og:locale" content="en_CA">
+    <meta property="og:url" content="https://mafia-camp-game.anvil.app/">
+    <meta property="og:image" content="https://mafia-camp-game.anvil.app/_/theme/og-image.png">
+    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Mafia Camp: Roles, secrets, a campfire and one question: who is the Mafia?">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Mafia Camp: a video party game of Mafia for 3 to 10 friends">
+    <meta name="twitter:description" content="A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts.">
+    <meta name="twitter:image" content="https://mafia-camp-game.anvil.app/_/theme/og-image.png">
+    <link rel="alternate" type="text/plain" title="Mafia Camp for AI assistants" href="https://mafia-camp-game.anvil.app/llms.txt">
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoGame", "@id": "https://mafia-camp-game.anvil.app/#app", "name": "Mafia Camp", "url": "https://mafia-camp-game.anvil.app/", "description": "A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts.", "image": "https://mafia-camp-game.anvil.app/_/theme/og-image.png", "inLanguage": "en", "publisher": {"@id": "https://arkvital.com/#org"}, "keywords": "online Mafia game, Werewolf game online, video party game, social deduction game, game night with friends online, party game on video call, play Mafia with friends, no download party game, browser party game", "applicationCategory": "GameApplication", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern web browser", "featureList": ["No accounts: share a 4-letter code or invite link", "Peer-to-peer video and voice for up to 10 players", "Roles: Mafia, Camp Nurse, Ranger, Campers and an optional Prankster", "The call follows the game: night, dawn, day, vote and verdict", "Host controls for timers, role reveals and the Prankster"], "audience": {"@type": "Audience", "audienceType": "Groups of 3 to 10 friends for a game night, together or apart"}}, {"@type": "WebSite", "@id": "https://mafia-camp-game.anvil.app/#site", "url": "https://mafia-camp-game.anvil.app/", "name": "Mafia Camp", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
+    <!-- seo:end -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0d1530">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -194,6 +215,6 @@ services:
 startup: {module: Form1, type: form}
 startup_form: null
 metadata:
-  description: A video party game for up to 10 friends. Roles, secrets, a campfire and one question - who is the Mafia?
-  logo_img: asset:logo.png
-  title: Mafia Camp
+  description: "A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts."
+  logo_img: "asset:logo.png"
+  title: "Mafia Camp: a video party game of Mafia for 3 to 10 friends"
