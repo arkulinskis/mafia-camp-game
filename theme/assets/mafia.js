@@ -157,6 +157,21 @@
     });
   }
   var PHASE_SOUND = { night: [660, 494, 392], dawn: [392, 494, 660], day: [523, 659], vote: [587, 587, 784], verdict: [440, 349], over: [523, 659, 784, 1047], roles: [440, 554, 659] };
+  // Background music per phase: real tracks streamed by ArkMusic (theme/assets/ark-music.js). It plays only in this
+  // browser (never into the call), kept quiet, and dips further while people talk (day + vote). The Sounds button
+  // turns it off with the chimes.
+  var PHASE_MUSIC = {
+    lobby: ['midwest-western'], roles: ['waves'], night: ['spiralis'], dawn: ['bright-road'], day: ['bright-road'],
+    vote: ['dark-terrain'], verdict: ['waves'], over: ['nailed-it', 'midwest-western']
+  };
+  function music(phase) {
+    var M = window.ArkMusic;
+    if (!M) return;
+    M.enabled(store('sound') !== 'off');
+    if (!phase || !PHASE_MUSIC[phase]) { M.stop(1.5); return; }
+    M.play(PHASE_MUSIC[phase], { volume: 0.22, fade: 2 });
+    M.duck(phase === 'day' || phase === 'vote' ? 0.55 : 1, 1);
+  }
 
   // ------------------------------------------------------------------------------------------------ camera + mic
   function blankVideoTrack() {
@@ -389,6 +404,7 @@
       if (PHASE_SOUND[v.phase]) chime(PHASE_SOUND[v.phase]);
       if (v.phase === 'night' && v.my.alive && !v.my.ghost && v.my.role !== 'mafia') toast('Night falls. Your camera and mic are off to everyone until morning. 🌙');
     }
+    if (!before || before.phase !== v.phase) music(v.phase);
     renderRoom();
     routeAll();
     syncMesh();
@@ -449,6 +465,7 @@
     return m ? m[1].toUpperCase() : '';
   }
   function renderHome() {
+    music(null);
     homeSky();
     var hashCode = codeFromHash();
     var lastRoom = store('room');
@@ -585,6 +602,7 @@
   function toggleSound() {
     store('sound', store('sound') === 'off' ? null : 'off');
     renderDock();
+    if (window.ArkMusic) window.ArkMusic.enabled(store('sound') !== 'off');
     if (store('sound') !== 'off') chime([523, 659]);
   }
   function renderDock() {

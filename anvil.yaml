@@ -149,7 +149,7 @@ native_deps:
   head_html: |-
     <!-- Prepsto feedback panel (the only feedback channel): every Submit feedback link (data-prepsto-open) opens it -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="8ta2479" data-button="false" data-label="Submit feedback" async></script>
-    <script src="_/theme/legal-kit.js?v=c1bc0f0b86"></script>
+    <script src="_/theme/legal-kit.js?v=76fd7306a0"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/mafiacamp.json and run seo.py, not here) -->
     <link rel="canonical" href="https://mafia-camp-game.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -181,7 +181,8 @@ native_deps:
     <link rel="apple-touch-icon" href="_/theme/apple-touch-icon.png?v=1">
     <link rel="stylesheet" href="_/theme/mafia.css?v=1">
     <script src="_/theme/peerjs.min.js?v=1.5.2"></script>
-    <script src="_/theme/mafia.js?v=1"></script>
+    <script src="_/theme/ark-music.js?v=1"></script>
+    <script src="_/theme/mafia.js?v=2"></script>
     <script>
     /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
     (function () {

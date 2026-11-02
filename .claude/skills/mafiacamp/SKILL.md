@@ -85,3 +85,7 @@ From `C:/Users/arkvi/Documents/CLAUDE/APP_MAKER/legal-kit`: change `apps/mafiaca
 live in kit.json), `python -I build.py mafiacamp && python -I install.py mafiacamp`, commit and push here. Don't edit
 theme/assets/legal-kit.js, client_code/legal.py or server_code/legal_server.py here. The "Privacy & Terms" buttons use
 `data-lk-open="overview"`. No sign-up form (no accounts), so no consent tick box.
+
+## Music (Nov 2026)
+
+`PHASE_MUSIC` + `music(phase)` in mafia.js, called from setView on a phase change and renderHome; volume 0.22, ducked in day/vote; the Sounds button mutes it. Bump `mafia.js?v=` in anvil.yaml when mafia.js changes. Player = `window.ArkMusic` (copy written by `APP_MAKER/tools/music_sync.py`; don't edit the copy, edit `APP_MAKER/media/public/ark-music.js` and re-sync). Track slugs and feel: `APP_MAKER/media/manifest.json`; hosting: `APP_MAKER/media/README.md`. Test playback in headless Chrome with `--autoplay-policy=no-user-gesture-required` and read `ArkMusic.state()`.
