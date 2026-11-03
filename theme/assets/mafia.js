@@ -806,6 +806,10 @@
     var v = S.view, panel = $('.panel');
     if (!v || !panel) return;
     panel.innerHTML = '';
+    // The panel is rebuilt on every poll: play the entrance animations (role card, news) only when the phase changes.
+    var animKey = v.phase + '|' + v.day;
+    panel.classList.toggle('no-anim', panel.getAttribute('data-anim') === animKey);
+    panel.setAttribute('data-anim', animKey);
     var my = v.my, m = me(), isHost = v.host === v.me;
     var body = [];
     var role = my.role && ROLES[my.role];

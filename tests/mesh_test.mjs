@@ -139,6 +139,9 @@ try {
     await pages[0].waitFor(`${phase} === 'day'`, 10000);
     await sleep(1500);
     for (const p of pages) say(`day p${p.i} (${roleOf(p.i)}${p.i === victim ? ', dead' : ''}): sending to ${await p.eval(sendingCount)} (expect ${p.i === victim ? 0 : N - 1})`);
+    // the panel is rebuilt on every 2 s poll; its entrance animations must not replay (no-anim after the first render)
+    await sleep(2300);
+    say(`day re-render: phase=${await pages[0].eval(phase)} panel no-anim=${await pages[0].eval(`document.querySelector('.panel').classList.contains('no-anim')`)} (expect true while still day)`);
     await pages[0].shot('day-desktop');
     await pages[victim].shot('day-ghost-phone', { phone: true, full: true });
     // everyone alive presses ready
@@ -157,6 +160,8 @@ try {
     await pages[0].waitFor(`${phase} === 'verdict'`, 15000);
     await sleep(800);
     await pages[0].shot('verdict-desktop');
+    // the verdict card fades in once, then stays solid through the 2 s re-renders
+    say('verdict card: ' + await pages[0].eval(`(async () => { const seen = []; for (let k = 0; k < 40 && ${phase} === 'verdict'; k++) { const n = document.querySelector('.panel .news'); seen.push(n ? (+getComputedStyle(n).opacity).toFixed(1) + (document.querySelector('.panel').classList.contains('no-anim') ? 'R' : '') : '-'); await new Promise(r => setTimeout(r, 250)); } return seen.join(' '); })()`) + ' (R = re-render; once solid it should stay 1.0)');
     await pages[0].waitFor(`${phase} === 'over' || ${phase} === 'night'`, 15000);
     await sleep(1500);
     say('after verdict: ' + await pages[0].eval(phase) + ' winner=' + await pages[0].eval(`${S}.view.winner`));

@@ -275,6 +275,8 @@ html[data-sky="day"] .inv-code span { color: var(--accent); background: #fff; }
 .news-k { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; color: var(--muted); }
 .news-t { font: 400 22px/1.3 'Lilita One', sans-serif; }
 .news-mini { font-size: 14px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; line-height: 1.45; }
+/* Re-renders within one phase (polls every 2 s) must not replay the entrance animations. */
+.panel.no-anim .role-card, .panel.no-anim .news { animation: none; }
 @keyframes rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 .vote-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tally { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
