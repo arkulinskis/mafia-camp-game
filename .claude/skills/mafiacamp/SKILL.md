@@ -89,3 +89,4 @@ theme/assets/legal-kit.js, client_code/legal.py or server_code/legal_server.py h
 ## Music (Nov 2026)
 
 `PHASE_MUSIC` + `music(phase)` in mafia.js, called from setView on a phase change and renderHome; volume 0.22, ducked in day/vote; the Sounds button mutes it. Bump `mafia.js?v=` in anvil.yaml when mafia.js changes. Player = `window.ArkMusic` (copy written by `APP_MAKER/tools/music_sync.py`; don't edit the copy, edit `APP_MAKER/media/public/ark-music.js` and re-sync). Track slugs and feel: `APP_MAKER/media/manifest.json`; hosting: `APP_MAKER/media/README.md`. Test playback in headless Chrome with `--autoplay-policy=no-user-gesture-required` and read `ArkMusic.state()`.
+- renderPanel() rebuilds the panel on every 2 s poll; entrance animations (role card flip, news rise) play only when phase|day changes (`.panel.no-anim`). New animated panel bits: add them to that rule in mafia.css. mesh_test checks it.
