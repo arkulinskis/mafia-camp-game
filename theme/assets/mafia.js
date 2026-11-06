@@ -534,7 +534,8 @@
       h('footer', { class: 'foot' },
         h('span', null, '© Arkvital'),
         h('a', { class: 'link', href: 'https://prepsto.com/#f/8ta2479', target: '_blank', rel: 'noopener', 'data-prepsto-open': 'open' }, 'Submit feedback'),
-        h('button', { class: 'link', 'data-lk-open': 'overview', type: 'button' }, 'Privacy & Terms'))));
+        h('button', { class: 'link', 'data-lk-open': 'overview', type: 'button' }, 'Privacy & Terms'),
+        h('span', { class: 'fine' }, 'Contact developer: ', h('a', { class: 'link', href: 'https://arkvital.com', target: '_blank', rel: 'noopener' }, 'arkvital.com'), ' · Parent company: ', h('a', { class: 'link', href: 'https://addanapp.com', target: '_blank', rel: 'noopener' }, 'addanapp.com')))));
     if (!nameInput.value) setTimeout(function () { nameInput.focus(); }, 50);
   }
   function step(icon, title, text) {
