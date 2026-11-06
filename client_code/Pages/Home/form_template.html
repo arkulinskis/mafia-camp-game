@@ -1,0 +1,95 @@
+<anvil-form layout="mafia_camp_game.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="mc-home">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>Someone at camp is <em>not</em> who they seem.</h1>
+          <p class="lead">A video party game for 3 to 10 friends. Everyone gets a secret role. At night the Mafia strike while the camp sleeps. By day you look each other in the eye, argue it out on video, and vote someone onto the bus home.</p>
+
+          <div class="join-card" anvil:name="join_card">
+            <div class="tabs ui-seg" role="group" aria-label="Start a camp or join one">
+              <button type="button" anvil:name="tab_create" anvil:on-dom:click="self.tab_create_click">Start a camp</button>
+              <button type="button" anvil:name="tab_join" anvil:on-dom:click="self.tab_join_click">Join with a code</button>
+            </div>
+            <label class="field-wrap">
+              <span class="lbl">Your name at camp</span>
+              <anvil-component type="TextBox" name="name_box" prop:placeholder="Your camp name" prop:role='["field"]'></anvil-component>
+            </label>
+            <label class="field-wrap code-row" anvil:name="code_row">
+              <span class="lbl">Camp code</span>
+              <anvil-component type="TextBox" name="code_box" prop:placeholder="ABCD" prop:role='["field", "code-field"]'></anvil-component>
+            </label>
+            <anvil-component type="Button" name="go_button" prop:text="Start a camp" prop:role='["btn", "primary", "big"]'></anvil-component>
+            <anvil-component type="Label" name="back_note" prop:text="Back after a reload? Press Join camp: you keep your seat and your role." prop:role='["fine"]' prop:visible="false"></anvil-component>
+            <p class="fine">No account needed. Your browser will ask for your camera and microphone.</p>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="scene">
+            <div class="moon"></div><div class="stars"></div>
+            <div class="tiles-demo">
+              <span style="--c:#ff8a3d;--d:0s"><i></i></span><span style="--c:#4fd1a1;--d:.37s"><i></i></span><span style="--c:#8fb3ff;--d:.74s"><i></i></span>
+              <span style="--c:#ff6fae;--d:1.11s"><i></i></span><span style="--c:#ffd166;--d:1.48s"><i></i></span><span style="--c:#b58cff;--d:1.85s"><i></i></span>
+              <span style="--c:#5ad1e6;--d:2.22s"><i></i></span><span style="--c:#ff7a6b;--d:2.59s"><i></i></span><span style="--c:#a3e36b;--d:2.96s"><i></i></span>
+            </div>
+            <div class="fire"><span></span><span></span><span></span></div><div class="pines"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="how">
+        <h2>How a game goes</h2>
+        <ol class="steps">
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <li class="step"><div class="step-ic" aria-hidden="true">🔥</div><h3>Gather</h3><p>Start a camp and share its 4-letter code. Up to 10 people join a tiny-tile video call, straight from browser to browser.</p></li>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <li class="step"><div class="step-ic" aria-hidden="true">🌙</div><h3>Night</h3><p>Cameras and mics go dark. Only the Mafia see and hear each other while they pick a victim. The Nurse and the Ranger work in secret.</p></li>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <li class="step"><div class="step-ic" aria-hidden="true">☀️</div><h3>Day</h3><p>Wake up to the news. Talk, accuse, defend. Then everyone taps a tile to vote. Most votes is sent home.</p></li>
+        </ol>
+      </section>
+
+      <section class="ytf" id="watch" anvil:name="watch">
+        <div class="ytf-in">
+          <div class="ytf-copy">
+            <h2>See Mafia Camp in about a minute</h2>
+            <p>A short video tour of what Mafia Camp does and how it works.</p>
+            <a class="ytf-link" href="https://www.youtube.com/watch?v=gDPcBrwAhtI" target="_blank" rel="noopener"><svg viewBox="0 0 28 20" width="20" height="14" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#FF0033"/><path d="M11.2 5.8v8.4l7.3-4.2z" fill="#fff"/></svg>Watch on YouTube &#8599;</a>
+          </div>
+          <div>
+            <div class="ytf-frame">
+              <button type="button" class="ytf-cover" data-yt-film="gDPcBrwAhtI" data-yt-title="Mafia Camp video" aria-label="Play the Mafia Camp video (1:08)"><img src="_/theme/yt-cover.jpg" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="ytf-play" aria-hidden="true"><svg viewBox="0 0 68 48" width="68" height="48"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.3.3 34 .3 34 .3s-21.3 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6c5.2 1.4 26.5 1.4 26.5 1.4s21.3 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="#FF0033"/><path d="M45 24 27 14v20z" fill="#fff"/></svg></span><span class="ytf-len">1:08</span></button>
+            </div>
+            <p class="ytf-note">The video loads from YouTube when you press play.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="roles-intro">
+        <h2>Who's at camp</h2>
+        <div class="role-grid">
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <div class="role-mini mafia"><div class="role-ic" aria-hidden="true">🔪</div><h3>The Mafia</h3><p>Pick a victim each night. Act innocent by day.</p></div>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <div class="role-mini town"><div class="role-ic" aria-hidden="true">🩹</div><h3>Camp Nurse</h3><p>Protect one camper each night.</p></div>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <div class="role-mini town"><div class="role-ic" aria-hidden="true">🔦</div><h3>The Ranger</h3><p>Investigate one camper each night.</p></div>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <div class="role-mini town"><div class="role-ic" aria-hidden="true">🏕️</div><h3>Camper</h3><p>Find the Mafia and vote them out.</p></div>
+          <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+          <div class="role-mini alone"><div class="role-ic" aria-hidden="true">🤡</div><h3>The Prankster</h3><p>Get yourself voted out by day.</p></div>
+        </div>
+      </section>
+
+      <section class="tips">
+        <h2>Good to know</h2>
+        <ul>
+          <li><b>Headphones</b> stop echo when ten people talk at once.</li>
+          <li><b>6 to 10 players</b> is the sweet spot. 3 works for a quick try.</li>
+          <li><b>Laptop or phone.</b> Each person sends a small video to everyone, about 1.5 Mbps up for a full camp.</li>
+          <li><b>Ghosts</b> (players who are out) keep watching, and can whisper with other ghosts.</li>
+        </ul>
+      </section>
+    </div>
+  </anvil-block>
+</anvil-form>

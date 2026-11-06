@@ -1,0 +1,13 @@
+<div class="p-roles">
+  <div anvil:name="watching">
+    <h2 class="p-title">The game is starting</h2>
+    <p class="p-sub">Roles are being handed out. You are watching this round.</p>
+  </div>
+  <div class="role-card" anvil:name="card">
+    <div class="rc-ic" aria-hidden="true" anvil:dom-node="icon"></div>
+    <h2><span class="ui-sr">Your secret role: </span><span anvil:dom-node="name"></span></h2>
+    <anvil-component type="Label" name="long" prop:role='["rc-long"]'></anvil-component>
+    <anvil-component type="Label" name="team" prop:role='["rc-team"]'></anvil-component>
+  </div>
+  <p class="fine center" anvil:name="hint">This is your secret role. Keep a straight face: night falls in a few seconds…</p>
+</div>

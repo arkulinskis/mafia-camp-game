@@ -1,6 +1,13 @@
-/* Mafia Camp: the whole interface.
+/* Mafia Camp engine: the video call, the game clock and the video tiles (everything that streams or draws).
+ * The pages, panels, menus and dialogs are Python Forms (client_code); client_code/mc.py is this file's only caller.
  *
- *   MafiaCamp.mount(node, bridge)     bridge(action, payloadJson) -> Promise<jsonString>  (Form1 -> server game.mc_api)
+ *   MafiaCamp.init(bridge, host)      bridge(action, payloadJson) -> Promise<jsonString>   (mc.py -> server game.mc_api)
+ *                                     host = Python callbacks: toast(msg, kind), confirm(text, yes) -> Promise<bool>,
+ *                                     entered(), view(json), left(msg), dock(), copy(url)
+ *   MafiaCamp.enter(action, name, code, status)   create / join: camera, server, peer, polling. status('camera'|'walking')
+ *   MafiaCamp.mountGrid(el), bindClock(timerEl, barEl)   the Room page's video tiles and phase clock
+ *   MafiaCamp.act(action, payloadJson), leave(), copyInvite(), toggleMic(), toggleCam(), toggleSound(), media(),
+ *   confetti(), homeSky(), saved(key), view(), roles (ROLES), colors (SEAT_COLORS)
  *
  * The video call is a full mesh: every browser holds one PeerJS MediaConnection to every other player (up to 9).
  * Anvil is the broker: each player's PeerJS id travels in the `state` poll, and the browser with the smaller id dials.
@@ -22,7 +29,7 @@
     peer: null, peerId: '', stream: null, audioTrack: null, videoTrack: null, hasCam: false, hasMic: false,
     mic: true, cam: true, conns: new Map(), tried: new Map(), tiles: new Map(), analysers: new Map(),
     audioCtx: null, pollTimer: null, tickTimer: null, meterTimer: null, polling: false, busy: false,
-    lastPhase: '', storyOpen: false, failures: 0, needsTap: false,
+    lastPhase: '', failures: 0, needsTap: false, grid: null, host: {}, clockEl: null, barEl: null,
   };
   MC._S = S;
 
@@ -78,7 +85,7 @@
     if (Array.isArray(c)) { c.forEach(function (x) { add(el, x); }); return; }
     el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
   }
-  function $(sel, el) { return (el || S.root).querySelector(sel); }
+  function $(sel, el) { return (el || document).querySelector(sel); }
   function store(key, val) {
     try {
       if (arguments.length === 1) return localStorage.getItem('mc.' + key);
@@ -101,12 +108,11 @@
     });
   }
   function toast(msg, kind) {
-    var box = document.querySelector('.mc-toasts');
-    if (!box) { box = h('div', { class: 'mc-toasts', 'aria-live': 'polite' }); document.body.appendChild(box); }
-    var t = h('div', { class: 'mc-toast ' + (kind || '') }, msg);
-    box.appendChild(t);
-    setTimeout(function () { t.classList.add('out'); }, 3600);
-    setTimeout(function () { t.remove(); }, 4100);
+    try { if (S.host.toast) S.host.toast(String(msg), kind || ''); } catch (e) { /* the page is changing */ }
+  }
+  // Yes/no questions go to Python (an Anvil confirm dialog); a Python function that waits returns a Promise here.
+  function ask(text, yes) {
+    return Promise.resolve(S.host.confirm ? S.host.confirm(text, yes || 'OK') : window.confirm(text)).then(function (r) { return !!r; });
   }
   function players() { return (S.view && S.view.players) || []; }
   function byPid(pid) { return players().find(function (p) { return p.pid === pid; }); }
@@ -128,9 +134,8 @@
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', { day: '#cfe8f3', dawn: '#2c2a5a', night: '#070b1f', dusk: '#151233' }[sky] || '#151233');
   }
-  function homeSky() {
-    var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    setSky(light ? 'day' : 'dusk');
+  function homeSky() {  // the home page follows light / dark (app-kit.js sets html.ui-dark): daylight or dusk
+    setSky(document.documentElement.classList.contains('ui-dark') ? 'dusk' : 'day');
   }
 
   // ------------------------------------------------------------------------------------------------ sounds
@@ -405,39 +410,41 @@
       if (v.phase === 'night' && v.my.alive && !v.my.ghost && v.my.role !== 'mafia') toast('Night falls. Your camera and mic are off to everyone until morning. 🌙');
     }
     if (!before || before.phase !== v.phase) music(v.phase);
-    renderRoom();
+    setSky((PHASES[v.phase] || PHASES.lobby).sky);
+    renderTiles();
+    tick();
+    try { if (S.host.view) S.host.view(JSON.stringify(v)); } catch (e) { console.warn('[view]', e); }
     routeAll();
     syncMesh();
   }
-
   // ------------------------------------------------------------------------------------------------ joining + leaving
-  function enter(action, name, code) {
+  function enter(action, name, code, status) {
     name = (name || '').trim();
-    if (!name) { toast('Pick a camp name first.', 'warn'); return; }
+    if (!name) { toast('Pick a camp name first.', 'warn'); return Promise.resolve(false); }
     store('name', name);
     S.name = name;
     audioCtx();  // a click: browsers allow sound from now on
-    var btn = $('.join-go');
-    if (btn) { btn.disabled = true; btn.textContent = 'Checking your camera…'; }
-    getMedia().then(function (real) {
+    if (status) status('camera');
+    return getMedia().then(function (real) {
       setupStream(real);
-      if (btn) btn.textContent = 'Walking to camp…';
+      if (status) status('walking');
       return api(action, { name: name, code: code });
     }).then(function (v) {
       S.code = v.code;
       store('room', v.code);
       try { history.replaceState(null, '', '#' + v.code); } catch (e) { /* file:// */ }
-      buildRoom();
       setView(v);
+      try { if (S.host.entered) S.host.entered(); } catch (e) { console.warn('[entered]', e); }
       startPeer();
       clearInterval(S.pollTimer); S.pollTimer = setInterval(poll, 2000);
       clearInterval(S.tickTimer); S.tickTimer = setInterval(tick, 250);
       clearInterval(S.meterTimer); S.meterTimer = setInterval(meter, 150);
+      return true;
     }).catch(function (e) {
       stopStream();
       S.code = '';
       toast(e.message, 'warn');
-      if (btn) { btn.disabled = false; btn.textContent = action === 'create' ? 'Start a camp' : 'Join camp'; }
+      return false;
     });
   }
   function leaveLocal(msg) {
@@ -446,141 +453,24 @@
     S.analysers.forEach(function (a, key) { unwatchAudio(key); });
     if (S.peer) { try { S.peer.destroy(); } catch (e) { /* fine */ } }
     S.peer = null; S.peerId = ''; S.view = null; S.code = ''; S.tiles.clear(); S.tried.clear();
+    S.grid = null; S.clockEl = null; S.barEl = null;
     stopStream();
     store('room', null);
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* fine */ }
-    renderHome();
-    if (msg) toast(msg);
+    music(null);
+    homeSky();
+    try { if (S.host.left) S.host.left(msg || ''); } catch (e) { console.warn('[left]', e); }
   }
   function leave() {
     var v = S.view;
     var playing = v && v.phase !== 'lobby' && v.phase !== 'over' && v.my.alive && !v.my.spectator;
-    if (!confirm(playing ? 'Leave camp in the middle of the game? You will count as out.' : 'Leave camp?')) return;
-    api('leave').catch(function () { /* leaving anyway */ }).then(function () { leaveLocal(); });
+    return ask(playing ? 'Leave camp in the middle of the game? You will count as out.' : 'Leave camp?', 'Leave camp').then(function (yes) {
+      if (!yes) return false;
+      return api('leave').catch(function () { /* leaving anyway */ }).then(function () { leaveLocal(); return true; });
+    });
   }
 
-  // ------------------------------------------------------------------------------------------------ home screen
-  function codeFromHash() {
-    var m = /^#([a-z]{4})$/i.exec(location.hash || '');
-    return m ? m[1].toUpperCase() : '';
-  }
-  function renderHome() {
-    music(null);
-    homeSky();
-    var hashCode = codeFromHash();
-    var lastRoom = store('room');
-    var mode = hashCode ? 'join' : 'create';
-    var root = S.root;
-    root.innerHTML = '';
-    var nameInput = h('input', { class: 'field', id: 'mc-name', maxlength: 16, autocomplete: 'nickname', placeholder: 'Your camp name', value: store('name') || '' });
-    var codeInput = h('input', { class: 'field code-field', id: 'mc-code', maxlength: 4, autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'ABCD', value: hashCode });
-    codeInput.addEventListener('input', function () { codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z]/g, ''); });
-    var tabs, form, go;
-    function setMode(m) {
-      mode = m;
-      tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.mode === m); b.setAttribute('aria-selected', b.dataset.mode === m); });
-      form.classList.toggle('joining', m === 'join');
-      go.textContent = m === 'create' ? 'Start a camp' : 'Join camp';
-    }
-    tabs = h('div', { class: 'tabs', role: 'tablist' },
-      h('button', { type: 'button', role: 'tab', 'data-mode': 'create', onclick: function () { setMode('create'); } }, 'Start a camp'),
-      h('button', { type: 'button', role: 'tab', 'data-mode': 'join', onclick: function () { setMode('join'); codeInput.focus(); } }, 'Join with a code'));
-    go = h('button', { class: 'btn primary big join-go', type: 'submit' }, 'Start a camp');
-    form = h('form', { class: 'join-card', onsubmit: function (e) {
-      e.preventDefault();
-      if (mode === 'join' && codeInput.value.length !== 4) { toast('Camp codes have 4 letters.', 'warn'); codeInput.focus(); return; }
-      enter(mode, nameInput.value, mode === 'join' ? codeInput.value : '');
-    } },
-      tabs,
-      h('label', { class: 'lbl', for: 'mc-name' }, 'Your name at camp'), nameInput,
-      h('div', { class: 'code-row' }, h('label', { class: 'lbl', for: 'mc-code' }, 'Camp code'), codeInput),
-      go,
-      lastRoom && lastRoom === hashCode ? h('p', { class: 'fine' }, 'Back after a reload? Press Join camp: you keep your seat and your role.') : null,
-      h('p', { class: 'fine' }, 'No account needed. Your browser will ask for your camera and microphone.'));
-    setMode(mode);
-
-    root.appendChild(h('div', { class: 'mc-app mc-home' },
-      h('header', { class: 'home-top' },
-        h('div', { class: 'brand' }, logo(), h('span', null, 'Mafia Camp')),
-        h('button', { class: 'link', 'data-lk-open': 'overview', type: 'button' }, 'Privacy & Terms')),
-      h('section', { class: 'hero' },
-        h('div', { class: 'hero-copy' },
-          h('p', { class: 'kicker' }, 'A video party game for 3 to 10 friends'),
-          h('h1', null, 'Someone at camp is ', h('em', null, 'not'), ' who they seem.'),
-          h('p', { class: 'lead' }, 'Everyone gets a secret role. At night the Mafia strike while the camp sleeps. By day you look each other in the eye, argue it out on video, and vote someone onto the bus home.'),
-          form),
-        h('div', { class: 'hero-art', 'aria-hidden': 'true' }, scene())),
-      h('section', { class: 'how' },
-        h('h2', null, 'How a game goes'),
-        h('ol', { class: 'steps' },
-          step('🔥', 'Gather', 'Start a camp and share its 4-letter code. Up to 10 people join a tiny-tile video call, straight from browser to browser.'),
-          step('🌙', 'Night', 'Cameras and mics go dark. Only the Mafia see and hear each other while they pick a victim. The Nurse and the Ranger work in secret.'),
-          step('☀️', 'Day', 'Wake up to the news. Talk, accuse, defend. Then everyone taps a tile to vote. Most votes is sent home.'))),
-      h('section', { class: 'ytf', id: 'watch', html: '<div class="ytf-in"><div class="ytf-copy"><div class="kicker ytf-kick"><svg viewBox="0 0 28 20" width="20" height="14" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#FF0033"/><path d="M11.2 5.8v8.4l7.3-4.2z" fill="#fff"/></svg>Watch</div><h2>See Mafia Camp in about a minute</h2><p>A short video tour of what Mafia Camp does and how it works.</p><a class="ytf-link" href="https://www.youtube.com/watch?v=gDPcBrwAhtI" target="_blank" rel="noopener">Watch on YouTube &#8599;</a></div><div><div class="ytf-frame"><button type="button" class="ytf-cover"  data-yt-film="gDPcBrwAhtI" data-yt-title="Mafia Camp video" aria-label="Play the Mafia Camp video (1:08)"><img src="_/theme/yt-cover.jpg" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="ytf-play" aria-hidden="true"><svg viewBox="0 0 68 48" width="68" height="48"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.3.3 34 .3 34 .3s-21.3 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6c5.2 1.4 26.5 1.4 26.5 1.4s21.3 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="#FF0033"/><path d="M45 24 27 14v20z" fill="#fff"/></svg></span><span class="ytf-len">1:08</span></button></div><p class="ytf-note">The video loads from YouTube when you press play.</p></div></div>' }),
-      h('section', { class: 'roles-intro' },
-        h('h2', null, 'Who\'s at camp'),
-        h('div', { class: 'role-grid' }, ['mafia', 'nurse', 'ranger', 'camper', 'prankster'].map(function (r) {
-          var R = ROLES[r];
-          return h('div', { class: 'role-mini ' + R.side },
-            h('div', { class: 'role-ic' }, R.icon), h('h3', null, R.name), h('p', null, R.short));
-        }))),
-      h('section', { class: 'tips' },
-        h('h2', null, 'Good to know'),
-        h('ul', null,
-          h('li', null, h('b', null, 'Headphones'), ' stop echo when ten people talk at once.'),
-          h('li', null, h('b', null, '6 to 10 players'), ' is the sweet spot. 3 works for a quick try.'),
-          h('li', null, h('b', null, 'Laptop or phone.'), ' Each person sends a small video to everyone, about 1.5 Mbps up for a full camp.'),
-          h('li', null, h('b', null, 'Ghosts'), ' (players who are out) keep watching, and can whisper with other ghosts.'))),
-      h('footer', { class: 'foot' },
-        h('span', null, '© Arkvital'),
-        h('a', { class: 'link', href: 'https://prepsto.com/#f/8ta2479', target: '_blank', rel: 'noopener', 'data-prepsto-open': 'open' }, 'Submit feedback'),
-        h('button', { class: 'link', 'data-lk-open': 'overview', type: 'button' }, 'Privacy & Terms'),
-        h('span', { class: 'fine' }, 'Contact developer: ', h('a', { class: 'link', href: 'https://arkvital.com', target: '_blank', rel: 'noopener' }, 'arkvital.com'), ' · Parent company: ', h('a', { class: 'link', href: 'https://addanapp.com', target: '_blank', rel: 'noopener' }, 'addanapp.com')))));
-    if (!nameInput.value) setTimeout(function () { nameInput.focus(); }, 50);
-  }
-  function step(icon, title, text) {
-    return h('li', { class: 'step' }, h('div', { class: 'step-ic' }, icon), h('h3', null, title), h('p', null, text));
-  }
-  function logo() {
-    var d = h('span', { class: 'logo', 'aria-hidden': 'true' });
-    d.innerHTML = LOGO_SVG;
-    return d;
-  }
-  var LOGO_SVG = '<svg viewBox="0 0 64 64"><defs><linearGradient id="mcg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="64"><stop offset="0" stop-color="#1d2552"/><stop offset="1" stop-color="#3b2550"/></linearGradient></defs>' +
-    '<rect width="64" height="64" rx="16" fill="url(#mcg)"/><circle cx="46" cy="17" r="8" fill="#ffe8a3"/><circle cx="50" cy="14" r="7" fill="url(#mcg)"/>' +
-    '<circle cx="15" cy="13" r="1.4" fill="#fff" opacity=".8"/><circle cx="26" cy="9" r="1" fill="#fff" opacity=".6"/>' +
-    '<path d="M32 22 L52 50 H12 Z" fill="#ff8a3d"/><path d="M32 22 L40 50 H24 Z" fill="#a8441a"/><path d="M32 33 L36 50 H28 Z" fill="#1d1430"/></svg>';
-  function scene() {
-    var d = h('div', { class: 'scene' });
-    d.innerHTML = '<div class="moon"></div><div class="stars"></div>' +
-      '<div class="tiles-demo">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) {
-        return '<span style="--c:' + SEAT_COLORS[i] + ';--d:' + (i * 0.37).toFixed(2) + 's"><i></i></span>';
-      }).join('') + '</div>' +
-      '<div class="fire"><span></span><span></span><span></span></div><div class="pines"></div>';
-    return d;
-  }
-
-  // ------------------------------------------------------------------------------------------------ room screen
-  function buildRoom() {
-    var root = S.root;
-    root.innerHTML = '';
-    S.tiles.clear();
-    root.appendChild(h('div', { class: 'mc-app mc-room' },
-      h('header', { class: 'bar' },
-        h('div', { class: 'brand small' }, logo(), h('span', { class: 'hide-sm' }, 'Mafia Camp')),
-        h('button', { class: 'camp-code', type: 'button', title: 'Copy the invite link', onclick: copyInvite },
-          h('span', { class: 'cc-l' }, 'Camp'), h('b', { class: 'cc-code' }, S.code), h('span', { class: 'cc-copy' }, '🔗')),
-        h('div', { class: 'phase-chip' }, h('span', { class: 'ph-ic' }), h('span', { class: 'ph-label' }), h('span', { class: 'ph-timer' }))),
-      h('main', { class: 'room-main' },
-        h('section', { class: 'stage' }, h('div', { class: 'grid' })),
-        h('aside', { class: 'side' }, h('div', { class: 'panel' }), h('div', { class: 'story' }))),
-      h('nav', { class: 'dock' },
-        h('button', { class: 'dock-btn mic', type: 'button', onclick: toggleMic }, h('span', { class: 'di' }), h('span', { class: 'dl' })),
-        h('button', { class: 'dock-btn cam', type: 'button', onclick: toggleCam }, h('span', { class: 'di' }), h('span', { class: 'dl' })),
-        h('button', { class: 'dock-btn story-btn', type: 'button', onclick: function () { S.storyOpen = !S.storyOpen; renderRoom(); } }, h('span', { class: 'di' }, '📜'), h('span', { class: 'dl' }, 'Story')),
-        h('button', { class: 'dock-btn sound', type: 'button', onclick: toggleSound }, h('span', { class: 'di' }), h('span', { class: 'dl' }, 'Sounds')),
-        h('button', { class: 'dock-btn leave', type: 'button', onclick: leave }, h('span', { class: 'di' }, '🚪'), h('span', { class: 'dl' }, 'Leave')))));
-  }
+  // ------------------------------------------------------------------------------------------------ room controls
   function copyInvite() {
     var url = location.origin + location.pathname + '#' + S.code;
     if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
@@ -589,7 +479,7 @@
     }
     (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
       function () { toast('Invite link copied. Send it to your campers!'); },
-      function () { prompt('Copy this invite link:', url); });
+      function () { if (S.host.copy) S.host.copy(url); });
   }
   function toggleMic() {
     if (!S.hasMic) { toast('No microphone was found.', 'warn'); return; }
@@ -607,53 +497,26 @@
     if (window.ArkMusic) window.ArkMusic.enabled(store('sound') !== 'off');
     if (store('sound') !== 'off') chime([523, 659]);
   }
-  function renderDock() {
-    var mic = $('.dock .mic'), cam = $('.dock .cam'), snd = $('.dock .sound'), st = $('.dock .story-btn');
-    if (!mic) return;
-    mic.classList.toggle('off', !S.mic);
-    mic.querySelector('.di').textContent = S.mic ? '🎙️' : '🔇';
-    mic.querySelector('.dl').textContent = S.mic ? 'Mic on' : 'Muted';
-    cam.classList.toggle('off', !S.cam);
-    cam.querySelector('.di').textContent = S.cam ? '📷' : '🚫';
-    cam.querySelector('.dl').textContent = S.cam ? 'Camera' : 'Cam off';
-    var quiet = store('sound') === 'off';
-    snd.classList.toggle('off', quiet);
-    snd.querySelector('.di').textContent = quiet ? '🔕' : '🔔';
-    st.classList.toggle('on', S.storyOpen);
+  function renderDock() {  // the dock buttons are Python (Pages/Room): it reads media() again
+    try { if (S.host.dock) S.host.dock(); } catch (e) { /* the page is changing */ }
   }
   function tick() {
     var t = remaining();
-    var el = $('.ph-timer');
-    if (!el) return;
-    el.textContent = t == null ? '' : clock(t);
-    el.classList.toggle('hurry', t != null && t <= 10 && S.view && (S.view.phase === 'day' || S.view.phase === 'vote' || S.view.phase === 'night'));
-    var bar = $('.panel .timebar i');
+    var el = S.clockEl;
+    if (el) {
+      el.textContent = t == null ? '' : clock(t);
+      el.classList.toggle('hurry', t != null && t <= 10 && !!S.view && (S.view.phase === 'day' || S.view.phase === 'vote' || S.view.phase === 'night'));
+    }
+    var bar = S.barEl;
     if (bar && S.view && S.view.remaining != null) {
       var total = phaseTotal(S.view);
-      bar.style.width = (total ? Math.max(0, Math.min(100, (t / total) * 100)) : 0) + '%';
+      bar.style.transform = 'scaleX(' + (total ? Math.max(0, Math.min(1, t / total)) : 0).toFixed(4) + ')';
     }
     if (t === 0 && S.view && S.view.remaining > 0 && Date.now() - S.viewAt > 2500) poll();
   }
   function phaseTotal(v) {
     var s = v.settings || {};
     return { roles: 12, dawn: 9, verdict: 9, night: s.night_seconds, day: s.day_seconds, vote: s.vote_seconds }[v.phase] || 0;
-  }
-
-  function renderRoom() {
-    var v = S.view, room = $('.mc-room');
-    if (!v || !room) return;
-    var P = PHASES[v.phase] || PHASES.lobby;
-    setSky(P.sky);
-    room.setAttribute('data-phase', v.phase);
-    room.classList.toggle('ghost-me', !!v.my.ghost);
-    room.classList.toggle('story-open', S.storyOpen);
-    $('.ph-ic').textContent = P.icon;
-    $('.ph-label').textContent = v.phase === 'night' || v.phase === 'day' || v.phase === 'vote' ? P.label + ' ' + v.day : P.label;
-    renderTiles();
-    renderPanel();
-    renderStory();
-    renderDock();
-    tick();
   }
 
   // ---- tiles
@@ -691,11 +554,11 @@
       h('div', { class: 'tile-top' }, h('span', { class: 'seat' }), h('span', { class: 'tname' }), h('span', { class: 'ticons' })),
       h('div', { class: 'tags' }),
       h('button', { class: 'pick', type: 'button' }),
-      h('button', { class: 'kick', type: 'button', title: 'Send this camper home', 'aria-label': 'Remove' }, '✕'));
+      h('button', { class: 'kick', type: 'button', title: 'Send this camper home', 'aria-label': 'Send ' + p.name + ' home' }, '✕'));
     t = { el: el, video: video, src: null };
     el.querySelector('.pick').addEventListener('click', function () { onPick(p.pid); });
     el.querySelector('.kick').addEventListener('click', function () {
-      if (confirm('Send ' + nameOf(p.pid) + ' home? They leave this camp.')) act('kick', { pid: p.pid });
+      ask('Send ' + nameOf(p.pid) + ' home? They leave this camp.', 'Send home').then(function (yes) { if (yes) act('kick', { pid: p.pid }); });
     });
     S.tiles.set(p.pid, t);
     return t;
@@ -708,7 +571,7 @@
     else act('act', { target: target });
   }
   function renderTiles() {
-    var v = S.view, grid = $('.grid');
+    var v = S.view, grid = S.grid;
     if (!v || !grid) return;
     var list = players().slice().sort(function (a, b) { return (a.seat || 0) - (b.seat || 0); });
     var keep = {};
@@ -794,235 +657,12 @@
   function askForTap() {
     if (S.needsTap) return;
     S.needsTap = true;
-    var b = h('button', { class: 'tap-sound btn primary', type: 'button', onclick: function () {
+    var b = h('button', { class: 'tap-sound mc-btn primary', type: 'button', onclick: function () {
       audioCtx();
       S.tiles.forEach(function (t) { if (t.src) t.video.play().catch(function () { /* still blocked */ }); });
       b.remove(); S.needsTap = false;
     } }, '🔊 Tap to hear camp');
     document.body.appendChild(b);
-  }
-
-  // ---- panel
-  function renderPanel() {
-    var v = S.view, panel = $('.panel');
-    if (!v || !panel) return;
-    panel.innerHTML = '';
-    // The panel is rebuilt on every poll: play the entrance animations (role card, news) only when the phase changes.
-    var animKey = v.phase + '|' + v.day;
-    panel.classList.toggle('no-anim', panel.getAttribute('data-anim') === animKey);
-    panel.setAttribute('data-anim', animKey);
-    var my = v.my, m = me(), isHost = v.host === v.me;
-    var body = [];
-    var role = my.role && ROLES[my.role];
-    if (role && v.phase !== 'roles') {
-      body.push(h('button', { class: 'role-pill ' + role.side, type: 'button', title: 'Hold to see your role' },
-        h('span', { class: 'rp-l' }, 'Your role'), h('span', { class: 'rp-v' }, role.icon + ' ' + role.name)));
-    }
-    if (v.phase !== 'lobby' && v.phase !== 'over' && v.remaining != null) body.push(h('div', { class: 'timebar' }, h('i')));
-    var phaseFn = PANEL[v.phase] || PANEL.lobby;
-    body = body.concat(phaseFn(v, my, m, isHost));
-    if (my.ghost && v.phase !== 'over') {
-      body.push(h('div', { class: 'note ghost' }, my.spectator
-        ? '👻 The game had already started, so you are watching this round as a ghost. You can see everyone\'s role and talk with other ghosts. The living can\'t hear you. You will play the next round.'
-        : '👻 You are out, so you are a ghost now. You see every role, watch the Mafia at night and can talk with other ghosts. The living can\'t hear you.'));
-    }
-    if (isHost && ['roles', 'night', 'dawn', 'day', 'vote', 'verdict'].indexOf(v.phase) >= 0) {
-      body.push(h('div', { class: 'host-row' }, h('button', { class: 'btn ghost-btn small', type: 'button', onclick: function () {
-        if (confirm('Skip to the next phase now?')) act('skip');
-      } }, '⏭ Skip ahead (host)')));
-    }
-    add(panel, body);
-  }
-
-  function title(text, sub) { return [h('h2', { class: 'p-title' }, text), sub ? h('p', { class: 'p-sub' }, sub) : null]; }
-
-  var PANEL = {
-    lobby: function (v, my, m, isHost) {
-      var n = players().length, present = players().filter(function (p) { return !p.away; }).length;
-      var out = title('Around the campfire', n + ' of ' + v.max_players + ' campers here');
-      out.push(h('div', { class: 'invite' },
-        h('div', { class: 'inv-code' }, v.code.split('').map(function (c) { return h('span', null, c); })),
-        h('div', { class: 'inv-btns' },
-          h('button', { class: 'btn primary', type: 'button', onclick: copyInvite }, '🔗 Invite link'),
-          h('span', { class: 'fine' }, 'or tell friends the code'))));
-      if (isHost) {
-        var s = v.settings;
-        out.push(h('div', { class: 'settings' },
-          h('h3', null, 'Game settings'),
-          chips('Talk time by day', 'day_seconds', [60, 90, 120, 180, 240, 300], s.day_seconds, function (x) { return x < 120 ? x + 's' : (x / 60) + ' min'; }),
-          chips('Night', 'night_seconds', [25, 40, 60], s.night_seconds, function (x) { return x + 's'; }),
-          chips('Voting', 'vote_seconds', [25, 35, 50], s.vote_seconds, function (x) { return x + 's'; }),
-          toggle('Reveal roles when someone is out', 'reveal_roles', s.reveal_roles),
-          toggle('Add the Prankster 🤡 (7+ players)', 'prankster', s.prankster)));
-        var enough = present >= v.min_players;
-        out.push(h('button', { class: 'btn primary big', type: 'button', disabled: !enough, onclick: function () { act('start'); } },
-          enough ? '🔥 Start the game (' + present + ' campers)' : 'Waiting for campers (' + present + '/' + v.min_players + ')'));
-        out.push(h('p', { class: 'fine' }, 'Best with 6 to 10. ' + mafiaCount(present) + ' Mafia for ' + present + ' players.'));
-      } else {
-        out.push(h('p', { class: 'note' }, '🔥 ' + nameOf(v.host) + ' (the host) starts the game when everyone is here. Meanwhile, check your tile: it glows when you talk.'));
-      }
-      out.push(rulesCard());
-      return out;
-    },
-    roles: function (v, my) {
-      if (!my.role) return title('The game is starting', 'Roles are being handed out. You are watching this round.');
-      var R = ROLES[my.role];
-      var team = (my.team || []).filter(function (pid) { return pid !== v.me; });
-      return [
-        h('div', { class: 'role-card ' + R.side },
-          h('p', { class: 'rc-k' }, 'Your secret role'),
-          h('div', { class: 'rc-ic' }, R.icon),
-          h('h2', null, R.name),
-          h('p', null, R.long),
-          my.role === 'mafia' && team.length ? h('p', { class: 'rc-team' }, 'Your partners: ', h('b', null, team.map(nameOf).join(', '))) : null),
-        h('p', { class: 'fine center' }, 'Keep a straight face. Night falls in a few seconds…'),
-      ];
-    },
-    night: function (v, my) {
-      var R = my.role && ROLES[my.role];
-      if (!my.alive || my.ghost) {
-        var team = my.team || [];
-        return title('Night ' + v.day, 'The camp is asleep. You can watch the Mafia (' + team.map(nameOf).join(', ') + ') choose a victim.');
-      }
-      if (my.role === 'mafia') {
-        var partners = (my.team || []).filter(function (pid) { return pid !== v.me && (byPid(pid) || {}).alive; });
-        var picks = my.picks || {};
-        var agree = (my.team || []).filter(function (pid) { return (byPid(pid) || {}).alive; }).map(function (pid) { return picks[pid]; });
-        var same = agree.length && agree.every(function (x) { return x && x === agree[0]; });
-        return title('🔪 Pick tonight\'s victim', partners.length
-          ? 'Only your partners (' + partners.map(nameOf).join(', ') + ') can see and hear you now. Agree on one name and tap their tile.'
-          : 'You are the last of the Mafia. Tap the camper you want gone.')
-          .concat([h('p', { class: 'note ' + (same ? 'ok' : '') }, my.pick
-            ? (same ? '✓ The Mafia agree: ' + nameOf(agree[0]) + '.' : 'You picked ' + nameOf(my.pick) + '. ' + (partners.length ? 'If you disagree, the most-picked name (or a coin flip) wins.' : ''))
-            : 'No target yet. If nobody picks, nobody is attacked.')]);
-      }
-      if (my.role === 'nurse') {
-        return title('🩹 Who needs protecting?', 'Tap a tile to keep that camper safe tonight. You can pick yourself.' + (my.nurse_last ? ' Not ' + nameOf(my.nurse_last) + ' again tonight.' : ''))
-          .concat([h('p', { class: 'note' + (my.pick ? ' ok' : '') }, my.pick ? '✓ You are watching over ' + nameOf(my.pick) + '.' : 'Nobody protected yet.')]);
-      }
-      if (my.role === 'ranger') {
-        return title('🔦 Shine your flashlight', 'Tap a tile to investigate. At dawn you will know if they are Mafia.')
-          .concat([h('p', { class: 'note' + (my.pick ? ' ok' : '') }, my.pick ? '✓ Investigating ' + nameOf(my.pick) + '.' : 'Nobody checked yet.'), checksList(my)]);
-      }
-      return [
-        h('div', { class: 'sleep' }, h('div', { class: 'zz' }, h('span', null, 'z'), h('span', null, 'z'), h('span', null, 'Z')),
-          h('h2', { class: 'p-title' }, 'Night ' + v.day + ': you are asleep'),
-          h('p', { class: 'p-sub' }, (R ? R.icon + ' ' : '') + 'Your camera and mic are off to everyone until morning. Something is moving in the woods…')),
-      ];
-    },
-    dawn: function (v) {
-      var r = v.result || {};
-      return [h('div', { class: 'news ' + (r.pid ? 'bad' : 'good') },
-        h('p', { class: 'news-k' }, '🌅 Morning, day ' + v.day),
-        h('p', { class: 'news-t' }, r.text || 'The sun comes up over the lake.'))];
-    },
-    day: function (v, my) {
-      var r = v.result || {};
-      var alive = players().filter(function (p) { return p.alive && p.playing; }).length;
-      var ready = players().filter(function (p) { return p.ready; }).length;
-      var need = Math.floor(alive / 2) + 1;
-      var out = title('☀️ Talk it out', 'Who is acting strange? Accuse, defend, bluff. Voting starts when the time is up or most of you are ready.');
-      if (r.text) out.unshift(h('p', { class: 'news-mini' }, r.text));
-      if (my.alive && !my.ghost) {
-        out.push(h('button', { class: 'btn big ' + (my.ready ? 'on' : 'primary'), type: 'button', onclick: function () { act('ready', { ready: !my.ready }); } },
-          my.ready ? '✋ Ready (tap to undo)' : '✋ Ready to vote'));
-      }
-      out.push(h('p', { class: 'fine' }, ready + ' of ' + need + ' needed to start voting early.'));
-      if (my.role === 'ranger') out.push(checksList(my));
-      return out;
-    },
-    vote: function (v, my) {
-      var alive = players().filter(function (p) { return p.alive && p.playing; });
-      var voted = alive.filter(function (p) { return p.vote; }).length;
-      var out = title('🗳️ Vote someone out', my.alive && !my.ghost ? 'Tap a tile to vote. Change your mind any time before the bell. Most votes is sent home; a tie sends nobody.' : 'The living are voting.');
-      if (my.alive && !my.ghost) {
-        out.push(h('div', { class: 'vote-row' },
-          h('button', { class: 'btn ' + (my.vote === 'skip' ? 'on' : ''), type: 'button', onclick: function () { act('vote', { target: my.vote === 'skip' ? null : 'skip' }); } },
-            my.vote === 'skip' ? '✓ Skipping' : '🤷 Skip vote'),
-          h('span', { class: 'fine' }, my.vote && my.vote !== 'skip' ? 'You voted for ' + nameOf(my.vote) + '.' : (my.vote ? '' : 'You haven\'t voted yet.'))));
-      }
-      out.push(h('p', { class: 'fine' }, voted + ' of ' + alive.length + ' have voted.'));
-      out.push(tallyList(v));
-      if (my.role === 'ranger') out.push(checksList(my));
-      return out;
-    },
-    verdict: function (v) {
-      var r = v.result || {};
-      return [h('div', { class: 'news ' + (r.pid ? 'bad' : 'good') }, h('p', { class: 'news-k' }, '🚌 The verdict'), h('p', { class: 'news-t' }, r.text || '')), tallyList(v)];
-    },
-    over: function (v, my, m, isHost) {
-      var win = v.winner;
-      var mineWon = my.role && (win === 'prankster' ? my.role === 'prankster' : (win === 'mafia' ? my.role === 'mafia' : (ROLES[my.role].side === 'town')));
-      var headline = { town: '🏕️ The Campers win!', mafia: '🔪 The Mafia win!', prankster: '🤡 The Prankster wins!' }[win] || 'Game over';
-      var list = players().filter(function (p) { return p.playing; });
-      var out = [h('div', { class: 'over ' + (win || '') },
-        h('h2', null, headline),
-        my.role ? h('p', { class: 'over-you' }, mineWon ? 'That includes you. Well played! 🎉' : 'Not your side this time.') : null,
-        h('ul', { class: 'reveal' }, list.map(function (p) {
-          var R = p.role && ROLES[p.role];
-          return h('li', { class: p.alive ? '' : 'out', style: '--seat:' + color(p) }, h('span', { class: 'rv-n' }, p.name), h('span', { class: 'rv-r' }, R ? R.icon + ' ' + R.name : '?'), p.alive ? null : h('span', { class: 'rv-x' }, 'out'));
-        })))];
-      if (isHost) out.push(h('button', { class: 'btn primary big', type: 'button', onclick: function () { act('again'); } }, '🔥 Back to the campfire (play again)'));
-      else out.push(h('p', { class: 'note' }, nameOf(v.host) + ' can start another round.'));
-      if (mineWon) confetti();
-      return out;
-    },
-  };
-  function mafiaCount(n) { return n <= 5 ? 1 : (n <= 9 ? 2 : 3); }
-  function chips(label, key, values, current, fmt) {
-    return h('div', { class: 'set-row' }, h('span', { class: 'set-l' }, label),
-      h('div', { class: 'chips' }, values.map(function (x) {
-        return h('button', { class: 'chip' + (x === current ? ' on' : ''), type: 'button', onclick: function () { var p = {}; p[key] = x; act('settings', p); } }, fmt(x));
-      })));
-  }
-  function toggle(label, key, on) {
-    return h('button', { class: 'switch' + (on ? ' on' : ''), type: 'button', role: 'switch', 'aria-checked': on ? 'true' : 'false',
-      onclick: function () { var p = {}; p[key] = !on; act('settings', p); } }, h('i'), h('span', null, label));
-  }
-  function checksList(my) {
-    var c = my.checks || [];
-    if (!c.length) return null;
-    return h('div', { class: 'checks' }, h('h3', null, '🔦 Your notebook'), h('ul', null, c.map(function (x) {
-      return h('li', null, 'Night ' + x.day + ': ', h('b', null, nameOf(x.pid)), x.mafia ? ' is Mafia!' : ' is innocent.');
-    })));
-  }
-  function tallyList(v) {
-    var counts = {}, by = {};
-    players().forEach(function (p) {
-      if (!p.vote) return;
-      counts[p.vote] = (counts[p.vote] || 0) + 1;
-      (by[p.vote] = by[p.vote] || []).push(p.name);
-    });
-    var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
-    if (!keys.length) return null;
-    return h('ul', { class: 'tally' }, keys.map(function (k) {
-      return h('li', null, h('b', null, k === 'skip' ? '🤷 Skip' : nameOf(k)), h('span', { class: 'tl-n' }, String(counts[k])), h('span', { class: 'tl-by' }, by[k].join(', ')));
-    }));
-  }
-  function rulesCard() {
-    return h('details', { class: 'rules' }, h('summary', null, 'How to play'),
-      h('ul', null,
-        h('li', null, '🎭 Everyone gets a secret role. The Mafia know each other.'),
-        h('li', null, '🌙 Night: cameras and mics go dark. The Mafia pick a victim, the Nurse protects someone, the Ranger investigates someone.'),
-        h('li', null, '🌅 Dawn: find out who was attacked.'),
-        h('li', null, '☀️ Day: talk on video, then tap a tile to vote. Most votes is sent home. A tie sends nobody.'),
-        h('li', null, '🏁 The Campers win when all the Mafia are gone. The Mafia win when they are as many as everyone else.')),
-      h('div', { class: 'role-list' }, Object.keys(ROLES).map(function (r) {
-        return h('p', null, h('b', null, ROLES[r].icon + ' ' + ROLES[r].name + ': '), ROLES[r].short);
-      })));
-  }
-
-  // ---- story (the game log)
-  function renderStory() {
-    var v = S.view, box = $('.story');
-    if (!v || !box) return;
-    var ev = v.events || [];
-    box.innerHTML = '';
-    if (!ev.length) { box.appendChild(h('p', { class: 'fine' }, 'The story of this game will appear here.')); return; }
-    box.appendChild(h('h3', null, '📜 The story so far'));
-    box.appendChild(h('ol', null, ev.slice().reverse().map(function (e) {
-      return h('li', { class: 'ev ev-' + e.kind }, h('span', { class: 'ev-d' }, e.day ? 'Day ' + e.day : 'Start'), h('span', null, e.text));
-    })));
   }
 
   // ---- confetti for the winners
@@ -1038,21 +678,39 @@
     setTimeout(function () { box.remove(); }, 4500);
   }
 
-  // ------------------------------------------------------------------------------------------------ mount
-  MC.mount = function (node, bridge) {
+
+  // ------------------------------------------------------------------------------------------------ the Python side
+  // Tests open several players in one browser with ?mcp=1, ?mcp=2 ... (each its own player key).
+  var TOKEN_KEY = 'token' + ((/[?&]mcp=(\d+)/.exec(location.search) || [])[1] || '');
+  MC.init = function (bridge, host) {
     S.bridge = bridge;
-    S.root = node.querySelector('.mc-mount') || node;
-    S.token = store('token') || makeToken();
-    store('token', S.token);
-    renderHome();
-    if (window.matchMedia) {
-      var mq = window.matchMedia('(prefers-color-scheme: light)');
-      var f = function () { if (!S.code) homeSky(); };
-      if (mq.addEventListener) mq.addEventListener('change', f); else if (mq.addListener) mq.addListener(f);
-    }
-    window.addEventListener('hashchange', function () { if (!S.code && codeFromHash()) renderHome(); });
+    S.host = host || {};
+    S.token = store(TOKEN_KEY) || makeToken();
+    store(TOKEN_KEY, S.token);
+    homeSky();
+    new MutationObserver(function () { if (!S.code) homeSky(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('beforeunload', function () { if (S.peer) { try { S.peer.destroy(); } catch (e) { /* fine */ } } });
   };
+  MC.enter = enter;
+  MC.leave = leave;
+  MC.act = function (action, payloadJson) { return act(action, payloadJson ? JSON.parse(payloadJson) : {}); };
+  MC.copyInvite = copyInvite;
+  MC.toggleMic = toggleMic;
+  MC.toggleCam = toggleCam;
+  MC.toggleSound = toggleSound;
+  MC.media = function () {
+    return { mic: !!S.mic, cam: !!S.cam, hasMic: !!S.hasMic, hasCam: !!S.hasCam, sound: store('sound') !== 'off', code: S.code };
+  };
+  MC.mountGrid = function (el) { S.grid = el; S.tiles.forEach(function (t) { t.el.remove(); }); S.tiles.clear(); renderTiles(); };
+  MC.bindClock = function (timerEl, barEl) { S.clockEl = timerEl; S.barEl = barEl; tick(); };
+  MC.inRoom = function () { return !!S.code; };
+  MC.view = function () { return S.view ? JSON.stringify(S.view) : ''; };
+  MC.saved = function (key) { return store(key) || ''; };
+  MC.homeSky = homeSky;
+  MC.confetti = function () { if (S.view) confetti(); };
+  MC.roles = ROLES;
+  MC.colors = SEAT_COLORS;
 })();
 
 (function () {

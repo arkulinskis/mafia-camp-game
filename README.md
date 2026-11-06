@@ -19,13 +19,25 @@ A video party game for 3 to 10 friends, built on [Anvil](https://anvil.works). E
 
 ## How it's built
 
+Native Anvil Forms (Python + HTML templates) around one JavaScript engine for the call:
+
 ```
-client_code/Form1/       mounts window.MafiaCamp (theme/assets/mafia.js) and bridges it to the server
+client_code/startup.py   connects the engine to the server (mc.setup), Privacy & Terms, then the page for the address
+client_code/router.py    "" / #home = Pages/Home; #ABCD (an invite link) = Home with the code filled in; #watch
+client_code/mc.py        the engine seen from Python: the server bridge (game.mc_api), the callbacks it uses
+                         (toast, confirm, view, entered, left, dock, copy), the roles
+client_code/Layouts/Shell  the sky, the home page's header and footer (hidden in a camp)
+client_code/Pages/       Home (start / join a camp), Room (the bar, the side panel, the story, the dock)
+client_code/Panels/      the side panel per phase: Lobby, Roles, Night, News (dawn + verdict), Day, Vote, Over
+client_code/Components/  VideoGrid (the engine's tiles), Notebook (the Ranger's findings), Tally (the vote count)
+client_code/Items/       StoryEvent, Chip (a setting), CheckRow, TallyRow, RevealRow; Dialogs/Invite
 server_code/game.py      every game rule: one callable mc_api(action, payload_json)
-theme/assets/mafia.js    the interface + the WebRTC mesh (PeerJS)
-theme/assets/mafia.css   the design (sky themes)
+theme/assets/mc-engine.js  the engine: camera + mic, the PeerJS mesh and night routing, the 2 s poll, the phase
+                         clock, the video tiles (pick / vote / remove), sounds, music, confetti
+theme/assets/app.css     the design (sky themes per phase), the design kit, Anvil components' look
 theme/assets/peerjs.min.js  PeerJS 1.5.2, served with the app
-tests/                   server tests on the Anvil mock + a real 10-browser WebRTC test
+tools/                   check.py (validator, JS, assets, server tests), ui_test.py (the real app in the Anvil App
+                         Server: a whole game with two test campers, phone width, accessibility, design)
 ```
 
 Tables: `rooms` (code, host, phase + timer, settings, the whole game as one simpleObject) and `players` (room, secret token, public pid, name, seat, PeerJS id, mic/cam state, last seen). Camps untouched for 24 hours are deleted when a new camp starts.

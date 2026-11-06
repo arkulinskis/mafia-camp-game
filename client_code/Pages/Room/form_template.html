@@ -1,0 +1,45 @@
+<anvil-form layout="mafia_camp_game.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="mc-room" anvil:name="room">
+      <header class="bar">
+        <h1 class="ui-sr" anvil:dom-node="title"></h1>
+        <div class="brand small"><img class="logo" src="_/theme/favicon.svg" alt="" width="30" height="30"><span class="hide-sm">Mafia Camp</span></div>
+        <button type="button" class="camp-code" title="Copy the invite link" anvil:on-dom:click="self.code_click"><span class="cc-l">Camp</span><b class="cc-code" anvil:dom-node="cc_code"></b><span class="cc-copy" aria-hidden="true">🔗</span><span class="ui-sr">: copy the invite link</span></button>
+        <div class="phase-chip"><span class="ph-ic" aria-hidden="true" anvil:dom-node="ph_ic"></span><span class="ph-label" aria-live="polite" anvil:dom-node="ph_label"></span><span class="ph-timer" anvil:dom-node="ph_timer"></span></div>
+      </header>
+
+      <div class="room-main">
+        <section class="stage" aria-label="Campers">
+          <anvil-component type="mafia_camp_game.Components.VideoGrid" name="video_grid"></anvil-component>
+        </section>
+        <aside class="side">
+          <div class="panel">
+            <button type="button" class="role-pill" title="Hold to see your role" anvil:name="role_pill"><span class="rp-l">Your role</span><span class="rp-v" anvil:dom-node="rp_value"></span></button>
+            <div class="timebar" anvil:name="timebar" aria-hidden="true"><i anvil:dom-node="bar"></i></div>
+            <anvil-component type="LinearPanel" name="phase_slot" prop:role='["phase-slot"]'></anvil-component>
+            <anvil-component type="Label" name="ghost_note" prop:role='["note", "ghost"]' prop:visible="false"></anvil-component>
+            <div class="host-row" anvil:name="host_row">
+              <anvil-component type="Button" name="skip_button" prop:text="⏭ Skip ahead (host)" prop:role='["btn", "ghost-btn", "small"]'></anvil-component>
+            </div>
+          </div>
+          <div class="story" anvil:name="story" id="mc-story" tabindex="0" role="region" aria-label="The story so far">
+            <p class="fine" anvil:name="story_empty">The story of this game will appear here.</p>
+            <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+            <h3 anvil:name="story_head">📜 The story so far</h3>
+            <anvil-component type="RepeatingPanel" name="story_panel" prop:item_template="mafia_camp_game.Items.StoryEvent" prop:role='["story-list"]'></anvil-component>
+          </div>
+        </aside>
+      </div>
+
+      <nav class="dock" aria-label="Call controls">
+        <button type="button" class="dock-btn mic" anvil:name="mic_btn" anvil:on-dom:click="self.mic_click"><span class="di" aria-hidden="true" anvil:dom-node="mic_ic"></span><span class="dl" anvil:dom-node="mic_l"></span></button>
+        <button type="button" class="dock-btn cam" anvil:name="cam_btn" anvil:on-dom:click="self.cam_click"><span class="di" aria-hidden="true" anvil:dom-node="cam_ic"></span><span class="dl" anvil:dom-node="cam_l"></span></button>
+        <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+        <button type="button" class="dock-btn story-btn" anvil:name="story_btn" aria-controls="mc-story" anvil:on-dom:click="self.story_click"><span class="di" aria-hidden="true">📜</span><span class="dl">Story</span></button>
+        <button type="button" class="dock-btn sound" anvil:name="sound_btn" anvil:on-dom:click="self.sound_click"><span class="di" aria-hidden="true" anvil:dom-node="sound_ic"></span><span class="dl">Sounds</span></button>
+        <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+        <button type="button" class="dock-btn leave" anvil:on-dom:click="self.leave_click"><span class="di" aria-hidden="true">🚪</span><span class="dl">Leave</span></button>
+      </nav>
+    </div>
+  </anvil-block>
+</anvil-form>

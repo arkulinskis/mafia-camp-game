@@ -15,7 +15,7 @@ html .anvil-spinner, html #loadingSpinner {
   width: 96px; height: 96px; top: calc(50% - 48px); left: calc(50% - 48px);
   border-radius: 28px; background-image: none; color: transparent; border: 0;
   background-color: #1f2350;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, .5), 0 0 60px rgba(255, 138, 61, .18);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .5);
 }
 html .anvil-spinner .anvil-spinner-svg, html #loadingSpinner > * { display: none; }
 html .anvil-spinner::after, html #loadingSpinner::after {

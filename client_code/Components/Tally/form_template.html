@@ -1,0 +1,11 @@
+---
+custom_component: true
+toolbox_item:
+  title: Vote tally
+  group: Mafia Camp
+help_text: |
+  Who got how many votes (and from whom), most first. Hidden before the first vote.
+---
+<div class="tally-wrap">
+  <anvil-component type="RepeatingPanel" name="rows" prop:item_template="mafia_camp_game.Items.TallyRow" prop:role='["tally"]'></anvil-component>
+</div>

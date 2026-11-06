@@ -1,0 +1,51 @@
+<div class="p-lobby">
+  <h2 class="p-title">Around the campfire</h2>
+  <anvil-component type="Label" name="count" prop:role='["p-sub"]'></anvil-component>
+  <div class="invite">
+    <div class="inv-code" anvil:name="inv_code" role="img"><span anvil:dom-node="c0"></span><span anvil:dom-node="c1"></span><span anvil:dom-node="c2"></span><span anvil:dom-node="c3"></span></div>
+    <div class="inv-btns">
+      <anvil-component type="Button" name="invite_button" prop:text="🔗 Invite link" prop:role='["btn", "primary"]'></anvil-component>
+      <span class="fine">or tell friends the code</span>
+    </div>
+  </div>
+
+  <div class="settings" anvil:name="settings">
+    <h3>Game settings</h3>
+    <div class="set-row" role="group" aria-label="Talk time by day"><span class="set-l" aria-hidden="true">Talk time by day</span>
+      <anvil-component type="RepeatingPanel" name="day_chips" prop:item_template="mafia_camp_game.Items.Chip" prop:role='["chips"]'></anvil-component></div>
+    <div class="set-row" role="group" aria-label="Night"><span class="set-l" aria-hidden="true">Night</span>
+      <anvil-component type="RepeatingPanel" name="night_chips" prop:item_template="mafia_camp_game.Items.Chip" prop:role='["chips"]'></anvil-component></div>
+    <div class="set-row" role="group" aria-label="Voting"><span class="set-l" aria-hidden="true">Voting</span>
+      <anvil-component type="RepeatingPanel" name="vote_chips" prop:item_template="mafia_camp_game.Items.Chip" prop:role='["chips"]'></anvil-component></div>
+    <button type="button" class="switch" role="switch" anvil:name="reveal_switch" anvil:on-dom:click="self.reveal_click"><i></i><span>Reveal roles when someone is out</span></button>
+    <button type="button" class="switch" role="switch" anvil:name="prank_switch" anvil:on-dom:click="self.prank_click"><i></i><span>Add the Prankster 🤡 (7+ players)</span></button>
+  </div>
+  <div class="start" anvil:name="start_box">
+    <anvil-component type="Button" name="start_button" prop:role='["btn", "primary", "big"]'></anvil-component>
+    <anvil-component type="Label" name="start_note" prop:role='["fine"]'></anvil-component>
+  </div>
+  <anvil-component type="Label" name="wait_note" prop:role='["note"]'></anvil-component>
+
+  <details class="rules">
+    <summary>How to play</summary>
+    <ul>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>🎭 Everyone gets a secret role. The Mafia know each other.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>🌙 Night: cameras and mics go dark. The Mafia pick a victim, the Nurse protects someone, the Ranger investigates someone.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>🌅 Dawn: find out who was attacked.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>☀️ Day: talk on video, then tap a tile to vote. Most votes is sent home. A tie sends nobody.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>🏁 The Campers win when all the Mafia are gone. The Mafia win when they are as many as everyone else.</li>
+    </ul>
+    <div class="role-list">
+      <p><b>🔪 The Mafia:</b> Pick a victim each night. Act innocent by day.</p>
+      <p><b>🩹 Camp Nurse:</b> Protect one camper each night.</p>
+      <p><b>🔦 The Ranger:</b> Investigate one camper each night.</p>
+      <p><b>🏕️ Camper:</b> Find the Mafia and vote them out.</p>
+      <p><b>🤡 The Prankster:</b> Get yourself voted out by day.</p>
+    </div>
+  </details>
+</div>

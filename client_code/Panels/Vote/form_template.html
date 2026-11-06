@@ -1,0 +1,12 @@
+<div class="p-vote">
+  <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+  <h2 class="p-title">🗳️ Vote someone out</h2>
+  <anvil-component type="Label" name="sub" prop:role='["p-sub"]'></anvil-component>
+  <div class="vote-row" anvil:name="vote_row">
+    <anvil-component type="Button" name="skip_button" prop:role='["btn"]'></anvil-component>
+    <anvil-component type="Label" name="mine" prop:role='["fine"]'></anvil-component>
+  </div>
+  <anvil-component type="Label" name="count" prop:role='["fine"]'></anvil-component>
+  <anvil-component type="mafia_camp_game.Components.Tally" name="tally"></anvil-component>
+  <anvil-component type="mafia_camp_game.Components.Notebook" name="notebook"></anvil-component>
+</div>

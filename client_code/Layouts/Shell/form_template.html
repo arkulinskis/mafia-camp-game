@@ -1,0 +1,24 @@
+---
+layout_metadata:
+  title: Camp frame
+  description: The sky behind every page, the home page's header and footer; in a camp (page "room") both step aside
+---
+<div class="ui ui-shell mc-app">
+  <header class="ui-header home-top">
+    <a class="brand" href="#home" aria-label="Mafia Camp home">
+      <img class="logo" src="_/theme/favicon.svg" alt="" width="34" height="34"><span>Mafia Camp</span>
+    </a>
+    <button type="button" class="link" data-lk-open="overview">Privacy &amp; Terms</button>
+  </header>
+
+  <main class="ui-main">
+    <anvil-slot name="content"></anvil-slot>
+  </main>
+
+  <footer class="ui-footer foot">
+    <anvil-component type="Label" name="copyright_label" prop:text="© Arkvital" prop:role='["fine-print"]'></anvil-component>
+    <a class="link" href="https://prepsto.com/#f/8ta2479" target="_blank" rel="noopener" data-prepsto-open>Submit feedback</a>
+    <button type="button" class="link" data-lk-open="overview">Privacy &amp; Terms</button>
+    <p class="fine foot-org">Contact developer: <a class="link" href="https://arkvital.com" target="_blank" rel="noopener">arkvital.com</a> · Parent company: <a class="link" href="https://addanapp.com" target="_blank" rel="noopener">addanapp.com</a></p>
+  </footer>
+</div>

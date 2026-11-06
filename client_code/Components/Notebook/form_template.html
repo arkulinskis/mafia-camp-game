@@ -1,0 +1,15 @@
+---
+custom_component: true
+toolbox_item:
+  title: Ranger's notebook
+  group: Mafia Camp
+help_text: |
+  The Ranger's findings so far (who was checked, Mafia or innocent). Hidden when there is nothing in it.
+---
+<div class="nb-wrap">
+  <div class="checks" anvil:name="box">
+    <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+    <h3>🔦 Your notebook</h3>
+    <anvil-component type="RepeatingPanel" name="rows" prop:item_template="mafia_camp_game.Items.CheckRow" prop:role='["check-list"]'></anvil-component>
+  </div>
+</div>
