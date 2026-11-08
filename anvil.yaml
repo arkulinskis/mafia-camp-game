@@ -236,7 +236,7 @@ native_deps:
   head_html: |-
     <!-- Prepsto feedback panel (the only feedback channel): every Submit feedback link (data-prepsto-open) opens it -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="8ta2479" data-button="false" data-label="Submit feedback" async></script>
-    <script src="_/theme/legal-kit.js?v=a29e005023"></script>
+    <script src="_/theme/legal-kit.js?v=799799e656"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/mafiacamp.json and run seo.py, not here) -->
     <link rel="canonical" href="https://mafia-camp-game.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -271,7 +271,7 @@ native_deps:
     <link rel="stylesheet" href="_/theme/app.css?v=776705d7a7">
     <script src="_/theme/peerjs.min.js?v=3494724d48"></script>
     <script src="_/theme/ark-music.js?v=884c4f647c"></script>
-    <script src="_/theme/mc-engine.js?v=ca7886b21b"></script>
+    <script src="_/theme/mc-engine.js?v=7d3aa78bda"></script>
     <script>
     /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
     (function () {
@@ -309,6 +309,9 @@ services:
   server_config:
     user_table: users
   source: /runtime/services/anvil/users.yml
+- client_config: {}
+  server_config: {}
+  source: /runtime/services/anvil/secrets.yml
 - client_config: {}
   server_config: {}
   source: /runtime/services/google.yml

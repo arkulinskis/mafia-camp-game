@@ -40,7 +40,7 @@ server_code/game.py      ALL rules. mc_api(action, payload_json) -> {"ok", "data
 theme/assets/mafia.js    UI (home, room: grid of tiles, side panel per phase, story, dock) + mesh + routing
 theme/assets/mafia.css   design tokens per html[data-sky] = dusk | night | dawn | day
 theme/assets/theme.css   Anvil startup spinner (tent/moon tile + ember arc)
-theme/assets/peerjs.min.js  PeerJS 1.5.2 (defaults: 0.peerjs.com signalling, Google STUN, PeerJS TURN relays)
+theme/assets/peerjs.min.js  PeerJS 1.5.2 (defaults: 0.peerjs.com signalling, Google STUN, Cloudflare TURN via the `ice` action)
 tests/                   test_game.py, harness_server.py, mesh_test.mjs
 ```
 
@@ -75,8 +75,10 @@ covers (asleep / ghost / connecting / camera off) from the same rule. The server
 - Headless Chrome needs `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required`
   (and background-throttling off) for the mesh test. Same-origin tabs share localStorage = same player, hence one port per tab.
 - Full-page phone screenshots draw the fixed dock mid-page; that's the capture, not the layout.
-- Signalling and relays are PeerJS's free public servers. If calls fail on strict networks (offices, some mobile carriers),
-  the fix is a paid TURN service in `new Peer({config: {iceServers: …}})` (update the legal kit providers too).
+- Signalling is PeerJS's free public server. Relays (TURN) are **Cloudflare Realtime TURN** since 2026-11-08 (PeerJS's
+  free TURN hosts stopped resolving, so phones on mobile data / isolated Wi-Fi never connected and kept redialling).
+  The engine calls `ice` before `new Peer`; `a_ice` in game.py trades the app secrets `cf_turn_key_id` +
+  `cf_turn_api_token` for 24 h logins (drops :53 URLs). No secrets or Cloudflare down = STUN only (direct connections).
 - Anvil free plans: 10 players × 1 poll / 2 s ≈ 5 server calls a second while a camp is open.
 
 ## Privacy & Terms (legal kit)

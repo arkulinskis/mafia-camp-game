@@ -15,6 +15,8 @@ import json
 import random
 import string
 
+import anvil.http
+import anvil.secrets
 import anvil.server
 import anvil.tables as tables
 from anvil.tables import app_tables
@@ -761,9 +763,42 @@ def a_kick(p, room, me):
   _bump(room)
 
 
+# ---------------------------------------------------------------- video relays (Cloudflare TURN)
+# Phones on mobile data or strict Wi-Fi can't reach other players directly; a TURN relay passes their video along.
+# The app secrets cf_turn_key_id + cf_turn_api_token (Cloudflare dashboard > Realtime > TURN) buy 24 h logins.
+STUN_ONLY = [{"urls": ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"]}]
+
+
+def a_ice(p):
+  try:
+    key_id = anvil.secrets.get_secret("cf_turn_key_id")
+    token = anvil.secrets.get_secret("cf_turn_api_token")
+  except Exception:
+    print("[ice] Cloudflare TURN secrets are not set: direct connections only")
+    return {"iceServers": STUN_ONLY, "relay": False}
+  try:
+    r = anvil.http.request(
+      "https://rtc.live.cloudflare.com/v1/turn/keys/%s/credentials/generate-ice-servers" % key_id.strip(),
+      method="POST", json=True, data={"ttl": 86400}, timeout=8,
+      headers={"Authorization": "Bearer " + token.strip()})
+    servers = r.get("iceServers") or []
+    if isinstance(servers, dict):
+      servers = [servers]
+    # Browsers balk at port 53 (DNS) relay addresses; leave those out.
+    for s in servers:
+      urls = s.get("urls")
+      if isinstance(urls, list):
+        s["urls"] = [u for u in urls if ":53?" not in u and not u.endswith(":53")]
+    servers = [s for s in servers if s.get("urls")]
+    return {"iceServers": servers or STUN_ONLY, "relay": bool(servers)}
+  except Exception as e:
+    print("[ice] Cloudflare TURN request failed:", repr(e)[:300])
+    return {"iceServers": STUN_ONLY, "relay": False}
+
+
 ACTIONS = {"create": a_create, "join": a_join, "state": a_state, "leave": a_leave, "settings": a_settings,
            "start": a_start, "act": a_act, "ready": a_ready, "vote": a_vote, "skip": a_skip, "again": a_again,
-           "kick": a_kick}
+           "kick": a_kick, "ice": a_ice}
 
 
 @anvil.server.callable

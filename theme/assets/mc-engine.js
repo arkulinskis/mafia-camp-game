@@ -233,7 +233,17 @@
   function startPeer() {
     if (S.peer && !S.peer.destroyed) return;
     if (!window.Peer) { toast('The video library did not load. Reload the page.', 'warn'); return; }
-    var peer = S.peer = new window.Peer({ debug: 1 });
+    var wait = S.peer = { destroyed: false, destroy: function () { wait.destroyed = true; } };  // while the relay logins load
+    api('ice').catch(function () { return null; }).then(function (ice) {
+      if (S.peer !== wait || wait.destroyed) return;  // left the camp meanwhile
+      S.ice = (ice && ice.iceServers) || null;
+      makePeer();
+    });
+  }
+  function makePeer() {
+    var opts = { debug: 1 };
+    if (S.ice) opts.config = { iceServers: S.ice };
+    var peer = S.peer = new window.Peer(opts);
     peer.on('open', function (id) { S.peerId = id; poll(); });
     peer.on('call', function (call) {
       if (S.conns.has(call.peer)) dropConn(call.peer);
