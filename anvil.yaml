@@ -190,7 +190,10 @@ db_schema:
       type: string
     server: full
     title: Users
-metadata: {description: 'A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts.', logo_img: 'asset:logo.png', title: 'Mafia Camp: a video party game of Mafia for 3 to 10 friends'}
+metadata:
+  description: "A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts."
+  logo_img: "asset:logo.png"
+  title: "Mafia Camp: a video party game of Mafia for 3 to 10 friends"
 name: mafia-camp-game
 native_deps:
   head_html: |-
