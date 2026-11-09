@@ -3,34 +3,22 @@ db_schema:
   friendships:
     client: none
     columns:
-    - admin_ui:
-        order: 0
-        width: 200
+    - admin_ui: {order: 0, width: 200}
       name: id
       type: string
-    - admin_ui:
-        order: 2.5
-        width: 200
+    - admin_ui: {order: 2.5, width: 200}
       name: user_id_2
       type: string
-    - admin_ui:
-        order: 2
-        width: 200
+    - admin_ui: {order: 2, width: 200}
       name: user_id_1
       type: string
-    - admin_ui:
-        order: 3
-        width: 200
+    - admin_ui: {order: 3, width: 200}
       name: status
       type: string
-    - admin_ui:
-        order: 4
-        width: 200
+    - admin_ui: {order: 4, width: 200}
       name: request_date
       type: datetime
-    - admin_ui:
-        order: 5
-        width: 200
+    - admin_ui: {order: 5, width: 200}
       name: status_date
       type: datetime
     server: full
@@ -38,55 +26,35 @@ db_schema:
   players:
     client: none
     columns:
-    - admin_ui:
-        order: 0
-        width: 200
+    - admin_ui: {order: 0, width: 200}
       name: room
       target: rooms
       type: link_single
-    - admin_ui:
-        order: 1
-        width: 200
+    - admin_ui: {order: 1, width: 200}
       name: pid
       type: string
-    - admin_ui:
-        order: 2
-        width: 200
+    - admin_ui: {order: 2, width: 200}
       name: token
       type: string
-    - admin_ui:
-        order: 3
-        width: 200
+    - admin_ui: {order: 3, width: 200}
       name: name
       type: string
-    - admin_ui:
-        order: 4
-        width: 200
+    - admin_ui: {order: 4, width: 200}
       name: seat
       type: number
-    - admin_ui:
-        order: 5
-        width: 200
+    - admin_ui: {order: 5, width: 200}
       name: peer_id
       type: string
-    - admin_ui:
-        order: 5.5
-        width: 200
+    - admin_ui: {order: 5.5, width: 200}
       name: media
       type: string
-    - admin_ui:
-        order: 6
-        width: 200
+    - admin_ui: {order: 6, width: 200}
       name: joined
       type: datetime
-    - admin_ui:
-        order: 7
-        width: 200
+    - admin_ui: {order: 7, width: 200}
       name: last_seen
       type: datetime
-    - admin_ui:
-        order: 8
-        width: 200
+    - admin_ui: {order: 8, width: 200}
       name: left
       type: bool
     server: full
@@ -94,59 +62,37 @@ db_schema:
   rooms:
     client: none
     columns:
-    - admin_ui:
-        order: 0
-        width: 200
+    - admin_ui: {order: 0, width: 200}
       name: code
       type: string
-    - admin_ui:
-        order: 1
-        width: 200
+    - admin_ui: {order: 1, width: 200}
       name: created
       type: datetime
-    - admin_ui:
-        order: 2
-        width: 200
+    - admin_ui: {order: 2, width: 200}
       name: touched
       type: datetime
-    - admin_ui:
-        order: 3
-        width: 200
+    - admin_ui: {order: 3, width: 200}
       name: host
       type: string
-    - admin_ui:
-        order: 4
-        width: 200
+    - admin_ui: {order: 4, width: 200}
       name: phase
       type: string
-    - admin_ui:
-        order: 5
-        width: 200
+    - admin_ui: {order: 5, width: 200}
       name: phase_started
       type: datetime
-    - admin_ui:
-        order: 6
-        width: 200
+    - admin_ui: {order: 6, width: 200}
       name: phase_ends
       type: datetime
-    - admin_ui:
-        order: 7
-        width: 200
+    - admin_ui: {order: 7, width: 200}
       name: day
       type: number
-    - admin_ui:
-        order: 8
-        width: 200
+    - admin_ui: {order: 8, width: 200}
       name: version
       type: number
-    - admin_ui:
-        order: 9
-        width: 200
+    - admin_ui: {order: 9, width: 200}
       name: settings
       type: simpleObject
-    - admin_ui:
-        order: 10
-        width: 200
+    - admin_ui: {order: 10, width: 200}
       name: game
       type: simpleObject
     server: full
@@ -154,83 +100,51 @@ db_schema:
   users:
     client: none
     columns:
-    - admin_ui:
-        order: 0
-        width: 200
+    - admin_ui: {order: 0, width: 200}
       name: email
       type: string
-    - admin_ui:
-        order: 1
-        width: 200
+    - admin_ui: {order: 1, width: 200}
       name: enabled
       type: bool
-    - admin_ui:
-        order: 2
-        width: 200
+    - admin_ui: {order: 2, width: 200}
       name: last_login
       type: datetime
-    - admin_ui:
-        order: 3
-        width: 200
+    - admin_ui: {order: 3, width: 200}
       name: password_hash
       type: string
-    - admin_ui:
-        order: 4
-        width: 200
+    - admin_ui: {order: 4, width: 200}
       name: n_password_failures
       type: number
-    - admin_ui:
-        order: 5
-        width: 200
+    - admin_ui: {order: 5, width: 200}
       name: confirmed_email
       type: bool
-    - admin_ui:
-        order: 6
-        width: 200
+    - admin_ui: {order: 6, width: 200}
       name: remembered_logins
       type: simpleObject
-    - admin_ui:
-        order: 7
-        width: 200
+    - admin_ui: {order: 7, width: 200}
       name: signed_up
       type: datetime
-    - admin_ui:
-        order: 8
-        width: 276
+    - admin_ui: {order: 8, width: 276}
       name: peer_id_str
       type: string
-    - admin_ui:
-        order: 9
-        width: 200
+    - admin_ui: {order: 9, width: 200}
       name: user_name
       type: string
-    - admin_ui:
-        order: 10
-        width: 200
+    - admin_ui: {order: 10, width: 200}
       name: user_id
       type: string
-    - admin_ui:
-        order: 11
-        width: 200
+    - admin_ui: {order: 11, width: 200}
       name: legal_version
       type: string
-    - admin_ui:
-        order: 12
-        width: 200
+    - admin_ui: {order: 12, width: 200}
       name: legal_accepted_at
       type: datetime
-    - admin_ui:
-        order: 13
-        width: 200
+    - admin_ui: {order: 13, width: 200}
       name: legal_source
       type: string
     server: full
     title: Users
-metadata:
-  description: 'A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and
-    plays Mafia (Werewolf) at Camp Moonlake. No accounts.'
-  logo_img: asset:logo.png
-  title: 'Mafia Camp: a video party game of Mafia for 3 to 10 friends'
+metadata: {description: 'A video party game for 3 to 10 friends: everyone joins one video call in the browser, gets a secret role and plays Mafia (Werewolf) at Camp Moonlake. No accounts.', logo_img: 'asset:logo.png', title: 'Mafia Camp: a video party game of Mafia for 3 to 10 friends'}
 name: mafia-camp-game
 native_deps:
   head_html: |-
@@ -289,25 +203,23 @@ native_deps:
 package_name: mafia_camp_game
 runtime_options:
   client_version: '3'
-  server_spec:
-    base: python314
+  server_spec: {base: python314}
   version: 3
+secrets:
+  cf_turn_api_token:
+    type: secret
+    value:
+      6LVQQREKZ45CHQVQ: {? '' : IFDP8MnSJjhNdWErcJ8HhDq+9Jgq9i5o+FeYQxn1nAyphStC3V4FYCxFpbxMFgweVmLNAvm4YVl3lpQPj0qpxioqOovSol603NOpQQm/F2EstlDNto+rjjrs8a+WL069LR6S1lJBZrHyvtKG+k/ZNlqOdwLf9xoVu6HliuK/vQL7YzApm7uUaTOZwkLjEouBHUV4MfQX0eA5DArIAQAo+LiMZM+It67gIzzdgOO0COruvyZisRE1jP11Y+1TYPvHiBu8oZ5TxoxyLbIDDofXyrYw}
+  cf_turn_key_id:
+    type: secret
+    value:
+      6LVQQREKZ45CHQVQ: {? '' : gbsmVbmzWfBoTTczktswue+7m8/scOHm1VIN2CUbg5aflojs/jAy2yeqNt5sjybXCjcWYeudfnDBMBvGeXv3Hm5OlrTDBK7vOZSFCYfv8RiwdQH4EEAcWGUSWjVlzfESEqdYB5mAIxwPUF9yFQWnOBfhfV+dWcisdMbLYrUArt2uKvJJNUOaU9c+e6UqUpIKqL/R4+3QUZAvFTBySD1vIUpTc2uleJMmsjWtRIsaEw==}
 services:
 - client_config: {}
   server_config: {}
   source: /runtime/services/tables.yml
-- client_config:
-    allow_remember_me: true
-    allow_signup: true
-    confirm_email: false
-    enable_automatically: true
-    remember_me_days: 365
-    require_secure_passwords: false
-    share_login_status: true
-    use_email: true
-    use_google: true
-  server_config:
-    user_table: users
+- client_config: {allow_remember_me: true, allow_signup: true, confirm_email: false, enable_automatically: true, remember_me_days: 365, require_secure_passwords: false, share_login_status: true, use_email: true, use_google: true}
+  server_config: {user_table: users}
   source: /runtime/services/anvil/users.yml
 - client_config: {}
   server_config: {}
@@ -315,7 +227,5 @@ services:
 - client_config: {}
   server_config: {}
   source: /runtime/services/google.yml
-startup:
-  module: startup
-  type: module
+startup: {module: startup, type: module}
 startup_form: null
