@@ -4,13 +4,14 @@
  *   MafiaCamp.init(bridge, host)      bridge(action, payloadJson) -> Promise<jsonString>   (mc.py -> server game.mc_api)
  *                                     host = Python callbacks: toast(msg, kind), confirm(text, yes) -> Promise<bool>,
  *                                     entered(), view(json), left(msg), dock(), copy(url)
- *   MafiaCamp.enter(action, name, code, status)   create / join: camera, server, peer, polling. status('camera'|'walking')
+ *   MafiaCamp.enter(action, name, code, status)   create / join: camera, server, call, polling. status('camera'|'walking')
  *   MafiaCamp.mountGrid(el), bindClock(timerEl, barEl)   the Room page's video tiles and phase clock
  *   MafiaCamp.act(action, payloadJson), leave(), copyInvite(), toggleMic(), toggleCam(), toggleSound(), media(),
  *   confetti(), homeSky(), saved(key), view(), roles (ROLES), colors (SEAT_COLORS)
  *
- * The video call is a full mesh: every browser holds one PeerJS MediaConnection to every other player (up to 9).
- * Anvil is the broker: each player's PeerJS id travels in the `state` poll, and the browser with the smaller id dials.
+ * The video call is a full mesh: every browser holds one RTCPeerConnection to every other player (up to 9).
+ * Anvil is the go-between: each player's call id travels in the `state` poll, the browser with the smaller pid dials,
+ * and the offer/answer notes go through the server's `signal` / `inbox` actions (no PeerJS). Relays: Cloudflare TURN.
  * Video is 320x240 @ 15 fps, capped at ~180 kbps per connection, so 9 outgoing streams fit a normal home upload.
  *
  * Who hears and sees whom is enforced by the SENDER: per connection, the outgoing audio/video track is swapped for
@@ -26,7 +27,7 @@
   var MC = window.MafiaCamp = {};
   var S = {
     bridge: null, root: null, view: null, viewAt: 0, token: '', name: '', code: '',
-    peer: null, peerId: '', stream: null, audioTrack: null, videoTrack: null, hasCam: false, hasMic: false,
+    callId: '', ready: false, ice: null, seen: new Set(), fastTimer: null, inboxBusy: false, stream: null, audioTrack: null, videoTrack: null, hasCam: false, hasMic: false,
     mic: true, cam: true, conns: new Map(), tried: new Map(), tiles: new Map(), analysers: new Map(),
     audioCtx: null, pollTimer: null, tickTimer: null, meterTimer: null, polling: false, busy: false,
     lastPhase: '', failures: 0, needsTap: false, grid: null, host: {}, clockEl: null, barEl: null,
@@ -116,7 +117,6 @@
   }
   function players() { return (S.view && S.view.players) || []; }
   function byPid(pid) { return players().find(function (p) { return p.pid === pid; }); }
-  function byPeer(peerId) { return players().find(function (p) { return p.peer_id === peerId; }); }
   function me() { return S.view && byPid(S.view.me); }
   function nameOf(pid) { var p = byPid(pid); return p ? p.name : 'someone'; }
   function color(p) { return SEAT_COLORS[(((p && p.seat) || 1) - 1) % SEAT_COLORS.length]; }
@@ -230,98 +230,132 @@
   }
 
   // ------------------------------------------------------------------------------------------------ the mesh
-  function startPeer() {
-    if (S.peer && !S.peer.destroyed) return;
-    if (!window.Peer) { toast('The video library did not load. Reload the page.', 'warn'); return; }
-    var wait = S.peer = { destroyed: false, destroy: function () { wait.destroyed = true; } };  // while the relay logins load
+  // Plain browser WebRTC, no outside go-between: the handshake travels through Anvil. The player with the smaller pid
+  // dials. Each side sends ONE note (the dialler an 'offer', the other an 'answer'), each carrying the encryption
+  // fingerprint and every network address the browser found, so two server hops are enough. Notes arrive with the 2 s
+  // state poll; while a dialler waits for its answer it also checks the inbox every 0.6 s.
+  function startCall() {
+    S.callId = makeToken().slice(0, 16);  // new each visit: a reload tells the others to dial again
     api('ice').catch(function () { return null; }).then(function (ice) {
-      if (S.peer !== wait || wait.destroyed) return;  // left the camp meanwhile
-      S.ice = (ice && ice.iceServers) || null;
-      makePeer();
+      if (!S.code) return;
+      S.ice = (ice && ice.iceServers) || [{ urls: 'stun:stun.l.google.com:19302' }];
+      S.ready = true;
+      poll();
     });
   }
-  function makePeer() {
-    var opts = { debug: 1 };
-    if (S.ice) opts.config = { iceServers: S.ice };
-    var peer = S.peer = new window.Peer(opts);
-    peer.on('open', function (id) { S.peerId = id; poll(); });
-    peer.on('call', function (call) {
-      if (S.conns.has(call.peer)) dropConn(call.peer);
-      call.answer(S.stream);
-      setupCall(call);
-    });
-    peer.on('disconnected', function () {
-      setTimeout(function () { if (S.peer === peer && !peer.destroyed && peer.disconnected) peer.reconnect(); }, 1500);
-    });
-    peer.on('error', function (err) {
-      var type = err && err.type;
-      if (type === 'peer-unavailable') {
-        var m = /peer (\S+)/.exec(err.message || '');
-        if (m) dropConn(m[1]);
-        return;
-      }
-      console.warn('[peer]', type, err && err.message);
-      if (type === 'network' || type === 'server-error' || type === 'socket-error' || type === 'socket-closed') {
-        setTimeout(function () {
-          if (S.peer !== peer) return;
-          if (peer.destroyed) { S.peer = null; S.peerId = ''; startPeer(); } else if (peer.disconnected) peer.reconnect();
-        }, 3000);
-      }
-    });
-  }
-  function setupCall(call) {
-    var c = { call: call, t: Date.now(), stream: null, allow: null, tuned: false };
-    S.conns.set(call.peer, c);
-    route(c, true);  // before media flows: don't leak a frame at night
-    call.on('stream', function (st) {
-      if (S.conns.get(call.peer) !== c) return;
-      c.stream = st;
-      tune(c);
+  function newConn(pid, remote) {
+    var pc = new RTCPeerConnection({ iceServers: S.ice });
+    var c = { pc: pc, pid: pid, remote: remote, t: Date.now(), stream: null, up: false, waiting: false, allow: null, tuned: false };
+    S.conns.set(pid, c);
+    pc.ontrack = function (e) {
+      if (S.conns.get(pid) !== c) return;
+      if (!c.stream) c.stream = e.streams[0] || new MediaStream();
+      if (c.stream.getTracks().indexOf(e.track) < 0) c.stream.addTrack(e.track);
+      if (e.track.kind === 'audio') { unwatchAudio(pid); watchAudio(pid, c.stream); }
       route(c, true);
-      watchAudio(call.peer, st);
-      attachStreams();
+    };
+    pc.addEventListener('connectionstatechange', function () {
+      if (S.conns.get(pid) !== c) return;
+      if (pc.connectionState === 'connected') { c.up = true; tune(c); attachStreams(); }
+      if (pc.connectionState === 'failed') dropConn(pid);
     });
-    function gone() { if (S.conns.get(call.peer) === c) { S.conns.delete(call.peer); unwatchAudio(call.peer); attachStreams(); } }
-    call.on('close', gone);
-    call.on('error', gone);
-    var pc = call.peerConnection;
-    if (pc) pc.addEventListener('connectionstatechange', function () {
-      if (pc.connectionState === 'connected') tune(c);
-      if (pc.connectionState === 'failed') { try { call.close(); } catch (e) { /* already closed */ } gone(); }
+    return c;
+  }
+  function addTracks(c) {
+    S.stream.getTracks().forEach(function (t) { c.pc.addTrack(t, S.stream); });
+    c.added = true;
+    route(c, true);  // before media flows: don't leak a frame at night
+  }
+  function gathered(pc) {  // wait for every network address (at most 3 s), so one note carries them all
+    if (pc.iceGatheringState === 'complete') return Promise.resolve();
+    return new Promise(function (res) {
+      function done() { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', done); res(); } }
+      pc.addEventListener('icegatheringstatechange', done);
+      setTimeout(res, 3000);
     });
   }
-  function dropConn(peerId) {
-    var c = S.conns.get(peerId);
+  function dial(p) {
+    var c = newConn(p.pid, p.peer_id);
+    c.waiting = true;
+    addTracks(c);
+    c.pc.createOffer()
+      .then(function (o) { return c.pc.setLocalDescription(o); })
+      .then(function () { return gathered(c.pc); })
+      .then(function () {
+        if (S.conns.get(c.pid) !== c) return;
+        return api('signal', { to: c.pid, kind: 'offer', call: S.callId, target: c.remote, sdp: c.pc.localDescription.sdp })
+          .then(fastInbox);
+      })
+      .catch(function (e) { console.warn('[dial]', e && e.message); if (S.conns.get(c.pid) === c) dropConn(c.pid); });
+  }
+  function onSignal(s) {
+    if (!s || S.seen.has(s.id)) return;
+    S.seen.add(s.id);
+    if (s.target !== S.callId || !byPid(s.from)) return;  // meant for an earlier visit, or they left
+    var c = S.conns.get(s.from);
+    if (s.kind === 'offer') {
+      if (c) dropConn(s.from);  // they dialled again: start fresh
+      c = newConn(s.from, s.call);
+      c.pc.setRemoteDescription({ type: 'offer', sdp: s.sdp })
+        .then(function () { addTracks(c); return c.pc.createAnswer(); })
+        .then(function (a) { return c.pc.setLocalDescription(a); })
+        .then(function () { return gathered(c.pc); })
+        .then(function () {
+          if (S.conns.get(c.pid) !== c) return;
+          return api('signal', { to: c.pid, kind: 'answer', call: S.callId, target: s.call, sdp: c.pc.localDescription.sdp });
+        })
+        .catch(function (e) { console.warn('[answer]', e && e.message); if (S.conns.get(c.pid) === c) dropConn(c.pid); });
+    } else if (s.kind === 'answer') {
+      if (!c || !c.waiting || c.remote !== s.call) return;
+      c.waiting = false;
+      c.pc.setRemoteDescription({ type: 'answer', sdp: s.sdp })
+        .catch(function (e) { console.warn('[answer in]', e && e.message); if (S.conns.get(c.pid) === c) dropConn(c.pid); });
+    }
+  }
+  function fastInbox() {
+    if (S.fastTimer) return;
+    S.fastTimer = setInterval(function () {
+      var waiting = false;
+      S.conns.forEach(function (c) { if (c.waiting) waiting = true; });
+      if (!waiting || !S.code) { clearInterval(S.fastTimer); S.fastTimer = null; return; }
+      if (S.inboxBusy) return;
+      S.inboxBusy = true;
+      api('inbox', {}).then(function (r) { (r.signals || []).forEach(onSignal); })
+        .catch(function () { /* the next poll brings them */ })
+        .then(function () { S.inboxBusy = false; });
+    }, 600);
+  }
+  function dropConn(pid) {
+    var c = S.conns.get(pid);
     if (!c) return;
-    S.conns.delete(peerId);
-    unwatchAudio(peerId);
-    try { c.call.close(); } catch (e) { /* fine */ }
+    S.conns.delete(pid);
+    unwatchAudio(pid);
+    try { c.pc.close(); } catch (e) { /* fine */ }
     attachStreams();
   }
   function syncMesh() {
     var v = S.view;
-    if (!v || !S.peer || !S.peerId || S.peer.disconnected) return;
+    if (!v || !S.ready) return;
     var wanted = new Map();
-    players().forEach(function (p) { if (p.pid !== v.me && p.peer_id) wanted.set(p.peer_id, p); });
-    S.conns.forEach(function (c, peerId) { if (!wanted.has(peerId)) dropConn(peerId); });
+    players().forEach(function (p) { if (p.pid !== v.me && p.peer_id) wanted.set(p.pid, p); });
+    S.conns.forEach(function (c, pid) { if (!wanted.has(pid)) dropConn(pid); });
     var now = Date.now();
-    wanted.forEach(function (p, peerId) {
-      var c = S.conns.get(peerId);
+    wanted.forEach(function (p, pid) {
+      var c = S.conns.get(pid);
       if (c) {
-        var st = c.call.peerConnection && c.call.peerConnection.connectionState;
-        if (st === 'failed' || st === 'closed' || (!c.stream && now - c.t > 20000)) dropConn(peerId);
+        var st = c.pc.connectionState, age = now - c.t;
+        if (st === 'failed' || st === 'closed' || (p.peer_id !== c.remote && age > 8000) || (!c.up && age > 25000)) dropConn(pid);
         return;
       }
       if (p.away) return;
-      if (S.peerId < peerId && now - (S.tried.get(peerId) || 0) > 5000) {
-        S.tried.set(peerId, now);
-        var call = S.peer.call(peerId, S.stream, { metadata: { pid: v.me } });
-        if (call) setupCall(call);
+      if (v.me < pid && now - (S.tried.get(pid) || 0) > 6000) {
+        S.tried.set(pid, now);
+        dial(p);
       }
     });
   }
   function tune(c) {
-    var pc = c.call.peerConnection;
+    var pc = c.pc;
     if (!pc || c.tuned) return;
     pc.getTransceivers().forEach(function (t) {
       var s = t.sender;
@@ -343,12 +377,12 @@
   }
   function route(c, force) {
     var v = S.view, m = me();
-    var p = byPeer(c.call.peer);
+    var p = byPid(c.pid);
     var allow = !!(v && m && p && sends(m, p, v));
     if (!force && c.allow === allow) return;
     c.allow = allow;
-    var pc = c.call.peerConnection;
-    if (!pc) return;
+    var pc = c.pc;
+    if (!pc || !c.added || pc.signalingState === 'closed') return;  // (the answerer adds its tracks after the offer)
     pc.getTransceivers().forEach(function (t) {
       var kind = t.receiver && t.receiver.track && t.receiver.track.kind;
       if (!kind || !t.sender) return;
@@ -382,7 +416,7 @@
       for (var i = 0; i < a.buf.length; i++) { var x = (a.buf[i] - 128) / 128; sum += x * x; }
       var rms = Math.sqrt(sum / a.buf.length);
       a.level = a.level * 0.6 + rms * 0.4;
-      var pid = key === 'me' ? (S.view && S.view.me) : (byPeer(key) || {}).pid;
+      var pid = key === 'me' ? (S.view && S.view.me) : key;
       var tile = pid && S.tiles.get(pid);
       if (tile) tile.el.classList.toggle('speaking', a.level > 0.035 && (key !== 'me' || S.mic));
     });
@@ -392,8 +426,8 @@
   function poll() {
     if (S.polling || !S.code) return;
     S.polling = true;
-    api('state', { peer_id: S.peerId, media: (S.mic ? 'm' : '') + (S.cam ? 'c' : '') })
-      .then(function (v) { S.failures = 0; setView(v); })
+    api('state', { peer_id: S.ready ? S.callId : '', media: (S.mic ? 'm' : '') + (S.cam ? 'c' : '') })
+      .then(function (v) { S.failures = 0; setView(v); (v.signals || []).forEach(onSignal); })
       .catch(function (e) {
         if (e.code === 'not_in_room' || e.code === 'no_room') { leaveLocal(e.message); return; }
         if (e.code === 'session') { location.reload(); return; }
@@ -445,7 +479,7 @@
       try { history.replaceState(null, '', '#' + v.code); } catch (e) { /* file:// */ }
       setView(v);
       try { if (S.host.entered) S.host.entered(); } catch (e) { console.warn('[entered]', e); }
-      startPeer();
+      startCall();
       clearInterval(S.pollTimer); S.pollTimer = setInterval(poll, 2000);
       clearInterval(S.tickTimer); S.tickTimer = setInterval(tick, 250);
       clearInterval(S.meterTimer); S.meterTimer = setInterval(meter, 150);
@@ -461,8 +495,8 @@
     clearInterval(S.pollTimer); clearInterval(S.tickTimer); clearInterval(S.meterTimer);
     S.conns.forEach(function (c, id) { dropConn(id); });
     S.analysers.forEach(function (a, key) { unwatchAudio(key); });
-    if (S.peer) { try { S.peer.destroy(); } catch (e) { /* fine */ } }
-    S.peer = null; S.peerId = ''; S.view = null; S.code = ''; S.tiles.clear(); S.tried.clear();
+    clearInterval(S.fastTimer); S.fastTimer = null;
+    S.ready = false; S.callId = ''; S.seen.clear(); S.view = null; S.code = ''; S.tiles.clear(); S.tried.clear();
     S.grid = null; S.clockEl = null; S.barEl = null;
     stopStream();
     store('room', null);
@@ -660,8 +694,8 @@
   function tag(text, kind, title) { return h('span', { class: 'tag ' + (kind || ''), title: title || null }, text); }
   function initials(name) { return (name || '?').split(' ').map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase(); }
   function streamFor(p) {
-    var c = p.peer_id && S.conns.get(p.peer_id);
-    return c && c.stream;
+    var c = S.conns.get(p.pid);
+    return c && c.up ? c.stream : null;
   }
   function attachStreams() { renderTiles(); }
   function askForTap() {
@@ -700,7 +734,7 @@
     homeSky();
     new MutationObserver(function () { if (!S.code) homeSky(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    window.addEventListener('beforeunload', function () { if (S.peer) { try { S.peer.destroy(); } catch (e) { /* fine */ } } });
+    window.addEventListener('beforeunload', function () { S.conns.forEach(function (c) { try { c.pc.close(); } catch (e) { /* fine */ } }); });
   };
   MC.enter = enter;
   MC.leave = leave;

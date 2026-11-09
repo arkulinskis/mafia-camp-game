@@ -1,6 +1,6 @@
 """Mafia Camp's JavaScript engine (theme/assets/mc-engine.js, window.MafiaCamp) seen from Python.
 
-The engine owns everything that streams or draws: camera + mic, the PeerJS video mesh and who-hears-whom routing,
+The engine owns everything that streams or draws: camera + mic, the WebRTC video mesh and who-hears-whom routing,
 the 2 s `state` poll, the phase clock, the video tiles (pick / vote / kick buttons on them), sounds, music, confetti.
 The pages, panels and dialogs are Forms; they reach the engine only through this module:
 

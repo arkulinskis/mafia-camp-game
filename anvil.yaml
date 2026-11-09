@@ -97,6 +97,52 @@ db_schema:
       type: simpleObject
     server: full
     title: Rooms
+  signals:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: room
+      target: rooms
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: to
+      type: string
+    - admin_ui:
+        order: 2
+        width: 200
+      name: sender
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: kind
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: sdp
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: call
+      type: string
+    - admin_ui:
+        order: 6
+        width: 200
+      name: target
+      type: string
+    - admin_ui:
+        order: 7
+        width: 200
+      name: created
+      type: datetime
+    server: full
+    title: Signals
   users:
     client: none
     columns:
@@ -150,7 +196,7 @@ native_deps:
   head_html: |-
     <!-- Prepsto feedback panel (the only feedback channel): every Submit feedback link (data-prepsto-open) opens it -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="8ta2479" data-button="false" data-label="Submit feedback" async></script>
-    <script src="_/theme/legal-kit.js?v=799799e656"></script>
+    <script src="_/theme/legal-kit.js?v=0d747b4f15"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/mafiacamp.json and run seo.py, not here) -->
     <link rel="canonical" href="https://mafia-camp-game.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -183,9 +229,8 @@ native_deps:
     <script src="_/theme/app-kit.js?v=a1d0d2a93f"></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=8f508d76cd">
     <link rel="stylesheet" href="_/theme/app.css?v=776705d7a7">
-    <script src="_/theme/peerjs.min.js?v=3494724d48"></script>
     <script src="_/theme/ark-music.js?v=884c4f647c"></script>
-    <script src="_/theme/mc-engine.js?v=7d3aa78bda"></script>
+    <script src="_/theme/mc-engine.js?v=8b3e143ef4"></script>
     <script>
     /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
     (function () {

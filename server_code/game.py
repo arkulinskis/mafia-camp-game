@@ -4,8 +4,8 @@ One callable, mc_api(action, payload_json) -> JSON string {"ok": true, "data": .
 Nobody signs in: each browser makes a random secret `token` (kept in its local storage) and sends it with every
 request, plus the 4-letter camp `code`. Players also get a public `pid`, which is what other people see.
 
-The video call itself is peer to peer (PeerJS in the browser). This server is the broker: it stores each
-player's PeerJS id so the browsers can find each other, and it runs the game: roles, phases, timers, votes.
+The video call itself is peer to peer (plain WebRTC in the browser). This server is the go-between: it stores each
+player's call id, passes the browsers' offer/answer notes (signal / inbox), and runs the game: roles, phases, timers, votes.
 Browsers poll `state` every ~2 seconds; that poll also moves the game on when a phase's time is up.
 
 Each room keeps the whole game in one simpleObject (`game`), so a change is one row write inside a transaction.
@@ -429,6 +429,8 @@ def _cleanup():
     if t is None or t < cutoff:
       for p in app_tables.players.search(room=room):
         p.delete()
+      for n in app_tables.signals.search(room=room):
+        n.delete()
       room.delete()
 
 
@@ -523,7 +525,16 @@ def a_join(p):
 
 
 def a_state(p):
-  """The poll: heartbeat + PeerJS id, moves the game on when its time is up, returns the view."""
+  """The poll: heartbeat + call id, moves the game on when its time is up, returns the view + handshake notes."""
+  v = _state(p)
+  try:
+    v["signals"] = _inbox(p)
+  except AttributeError:  # the signals table isn't there yet (schema not accepted): the game still runs
+    v["signals"] = []
+  return v
+
+
+def _state(p):
   token = _check_token(p.get("token"))
   room = _room(p.get("code"))
   me = _me(room, token)
@@ -549,6 +560,11 @@ def a_state(p):
 @tables.in_transaction
 def _housekeep(code):
   room = app_tables.rooms.get(code=code)
+  if room is not None:
+    old = _now() - dt.timedelta(seconds=SIGNAL_MAX_AGE_S)
+    for n in app_tables.signals.search(room=room):
+      if _aware(n["created"]) is None or _aware(n["created"]) < old:
+        n.delete()
   if room is not None and _drop_stale_lobby(room, _now()):
     _fix_host(room, _now())
     _bump(room)
@@ -763,6 +779,50 @@ def a_kick(p, room, me):
   _bump(room)
 
 
+# ---------------------------------------------------------------- the call handshake (WebRTC signalling)
+# Browsers swap one 'offer' and one 'answer' note per connection through the signals table (no PeerJS). A note holds
+# the browser's session description: codecs, the encryption fingerprint and its network addresses. Delivered once
+# (deleted on read); undelivered notes go after SIGNAL_MAX_AGE_S.
+SIGNAL_MAX_AGE_S = 120
+SIGNAL_KINDS = ("offer", "answer")
+
+
+def a_signal(p):
+  token = _check_token(p.get("token"))
+  room = _room(p.get("code"))
+  me = _me(room, token)
+  to = str(p.get("to") or "")
+  kind = str(p.get("kind") or "")
+  sdp = p.get("sdp")
+  if kind not in SIGNAL_KINDS or not isinstance(sdp, str) or not 20 < len(sdp) <= 20000:
+    raise ApiError("That call set-up message didn't make sense.", "bad_input")
+  target = app_tables.players.get(room=room, pid=to)
+  if target is None or target["left"] or to == me["pid"]:
+    raise ApiError("That camper isn't here any more.", "no_player")
+  app_tables.signals.add_row(room=room, to=to, sender=me["pid"], kind=kind, sdp=sdp,
+                             call=str(p.get("call") or "")[:40], target=str(p.get("target") or "")[:40], created=_now())
+  return {"sent": True}
+
+
+def _inbox(p):
+  token = _check_token(p.get("token"))
+  room = _room(p.get("code"))
+  me = _me(room, token)
+  out = []
+  for n in app_tables.signals.search(room=room, to=me["pid"]):
+    out.append({"id": n.get_id(), "from": n["sender"], "kind": n["kind"], "sdp": n["sdp"], "call": n["call"],
+                "target": n["target"]})
+    try:
+      n.delete()
+    except Exception:
+      pass  # another request delivered it at the same moment; the browser ignores repeats
+  return out
+
+
+def a_inbox(p):
+  return {"signals": _inbox(p)}
+
+
 # ---------------------------------------------------------------- video relays (Cloudflare TURN)
 # Phones on mobile data or strict Wi-Fi can't reach other players directly; a TURN relay passes their video along.
 # The app secrets cf_turn_key_id + cf_turn_api_token (Cloudflare dashboard > Realtime > TURN) buy 24 h logins.
@@ -798,7 +858,7 @@ def a_ice(p):
 
 ACTIONS = {"create": a_create, "join": a_join, "state": a_state, "leave": a_leave, "settings": a_settings,
            "start": a_start, "act": a_act, "ready": a_ready, "vote": a_vote, "skip": a_skip, "again": a_again,
-           "kick": a_kick, "ice": a_ice}
+           "kick": a_kick, "ice": a_ice, "signal": a_signal, "inbox": a_inbox}
 
 
 @anvil.server.callable

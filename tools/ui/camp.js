@@ -1,6 +1,6 @@
 /* Test helpers for a camp, put into flow.js / phone.js / a11y.js / design.js / seed.js by tools/ui_test.py where they
    say CAMP in a comment marker. One browser tab is the host (the real UI, fake camera + mic); two "test campers" join
-   through the same server bridge with their own player keys and poll like a browser would (no video: no PeerJS id).
+   through the same server bridge with their own player keys and poll like a browser would (no video: no call id).
 
    window.__camp.start(name)        on the home page: type the name, press Start a camp, wait for the Room page
    window.__camp.addBots(n)         n test campers join the camp and keep polling (so they count as present)

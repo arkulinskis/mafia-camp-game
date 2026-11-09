@@ -66,8 +66,8 @@ class Page {
 
 const NAMES = ['Ana', 'Ben', 'Cy', 'Dee', 'Eve', 'Finn', 'Gus', 'Hal', 'Ivy', 'Jo'];
 const S = 'window.MafiaCamp._S';
-const sending = `(() => { let n = 0; ${S}.conns.forEach(c => { const pc = c.call.peerConnection; if (pc && pc.getSenders().some(s => s.track)) n++; }); return n; })()`;
-const streams = `(() => { let n = 0; ${S}.conns.forEach(c => { if (c.stream) n++; }); return n; })()`;
+const sending = `(() => { let n = 0; ${S}.conns.forEach(c => { const pc = c.pc; if (pc && pc.getSenders().some(s => s.track)) n++; }); return n; })()`;
+const streams = `(() => { let n = 0; ${S}.conns.forEach(c => { if (c.up && c.stream) n++; }); return n; })()`;
 const frames = `[...document.querySelectorAll('.tile:not(.me) video')].filter(v => v.videoWidth > 0).length`;
 const phase = `(${S}.view && ${S}.view.phase)`;
 const join = (name) => `(() => { const i = document.querySelector('.join-card input'); i.value = ${JSON.stringify(name)};

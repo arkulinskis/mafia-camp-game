@@ -7,7 +7,7 @@
                                                Chrome runs with a fake camera + mic (tools/live/drive.mjs).
     python -I tools/ui_test.py --shots DIR     also screenshots of every page (desktop + phone, light + dark) into DIR
     python -I tools/ui_test.py --mesh          also the real call (tools/ui/mesh.mjs): N=3 browsers (env N, up to 10) join
-                                               one camp through the PeerJS cloud; checks who sends video to whom in every
+                                               one camp (handshake through the app server); checks who sends video to whom in every
                                                phase (night privacy). Needs the internet. --only none --mesh = just that.
     python -I tools/ui_test.py --stop          stop the local server afterwards
     python -I tools/ui_test.py --only a11y.js  one script (flow.js, phone.js, a11y.js or design.js)
@@ -149,7 +149,7 @@ def main():
             print("  " + e)
         if not res or not res.get("ok") or errors:
             failed = True
-    if "--mesh" in args:  # the real call: N browsers through the PeerJS cloud (needs the internet), night routing
+    if "--mesh" in args:  # the real call: N browsers, handshake through the app server, night routing
         mesh_out = out / "mesh"
         r = subprocess.run(["node", str(ROOT / "tools" / "ui" / "mesh.mjs"), URL, str(mesh_out)], capture_output=True,
                            text=True, encoding="utf-8", errors="replace", timeout=900)

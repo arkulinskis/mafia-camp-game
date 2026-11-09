@@ -1,6 +1,6 @@
 ---
 name: mafiacamp
-description: Context, workflow and recipes for Mafia Camp (repo arkulinskis/mafia-camp-game), the user's Anvil video party game - Mafia/Werewolf at a summer camp with a 10-way peer-to-peer WebRTC call (PeerJS mesh, Anvil as broker + game server). Load this before any feature request, bug fix, restyle or deploy for Mafia Camp.
+description: Context, workflow and recipes for Mafia Camp (repo arkulinskis/mafia-camp-game), the user's Anvil video party game - Mafia/Werewolf at a summer camp with a 10-way peer-to-peer WebRTC call (WebRTC mesh, Anvil as handshake go-between + game server, Cloudflare TURN relays). Load this before any feature request, bug fix, restyle or deploy for Mafia Camp.
 ---
 
 # Mafia Camp: working on the app
@@ -9,7 +9,7 @@ description: Context, workflow and recipes for Mafia Camp (repo arkulinskis/mafi
 
 **Where it lives:**
 - Repo **github.com/arkulinskis/mafia-camp-game**, branch `master`; Anvil pulls master. This folder **is** the Anvil repo ("git" layout). Live at: **https://mafia-camp-game.anvil.app**, published 2026-10-31.
-- Born from the user's 2024 experiment: PeerJS in the browser + Anvil table storing peer ids ("it really works between two computers"). Keep that architecture.
+- Born from the user's 2024 experiment: PeerJS in the browser + Anvil table storing peer ids ("it really works between two computers"). Since 2026-11-08 (user's request) PeerJS is gone: plain WebRTC, and Anvil carries the handshake too (signals table).
 
 **What the user wants:** "be creative, assume things". A fun, distinctive look; phone first (390px); 10 people on very small tiles with voice.
 
@@ -22,11 +22,11 @@ description: Context, workflow and recipes for Mafia Camp (repo arkulinskis/mafi
 5. **The real call test** (do it after any mafia.js / game.py change that touches the mesh, phases or routing):
    - start the harness (background): `FAST=1 python ...\APP_MAKER\tools\gitapp_test.py mafiacamp tests/harness_server.py 8841 8850`
      (the real game.py on the Anvil mock, one HTTP origin per port = one player per tab; FAST=1 makes every phase a few seconds; pick other free ports if taken)
-   - `N=10 PLAY=1 node tests/mesh_test.mjs <scratch dir>`: N headless Chrome tabs with fake camera + mic join one camp through the real PeerJS cloud, play a whole game, print per-tab "sending to" counts per phase (with the expected number) and outgoing bitrate, and save screenshots (home light/dark, lobby, roles, night, dawn, day, ghost, vote, verdict, end; desktop + phone). Read the PNGs.
+   - `N=10 PLAY=1 node tests/mesh_test.mjs <scratch dir>`: N headless Chrome tabs with fake camera + mic join one camp (handshake through the harness = real game.py), start a game, print per-tab "sending to" counts per phase (with the expected number) and outgoing bitrate, and save screenshots (home light/dark, lobby, roles, night, dawn, day, ghost, vote, verdict, end; desktop + phone). Read the PNGs.
    - stop the harness when done.
 6. Bump `?v=` on mafia.css / mafia.js / icons in `anvil.yaml → native_deps.head_html` whenever those files change.
 7. Commit only your files as arkulinskis with the Co-Authored-By line; `git push origin master`.
-8. Schema changes: `anvil.yaml → db_schema`; the user accepts the Schema Mismatch alert.
+8. Schema changes: `anvil.yaml → db_schema`; the user accepts the Schema Mismatch alert. Tables: rooms, players, signals (server only).
 
 ## Architecture
 
@@ -40,7 +40,6 @@ server_code/game.py      ALL rules. mc_api(action, payload_json) -> {"ok", "data
 theme/assets/mafia.js    UI (home, room: grid of tiles, side panel per phase, story, dock) + mesh + routing
 theme/assets/mafia.css   design tokens per html[data-sky] = dusk | night | dawn | day
 theme/assets/theme.css   Anvil startup spinner (tent/moon tile + ember arc)
-theme/assets/peerjs.min.js  PeerJS 1.5.2 (defaults: 0.peerjs.com signalling, Google STUN, Cloudflare TURN via the `ice` action)
 tests/                   test_game.py, harness_server.py, mesh_test.mjs
 ```
 
@@ -51,8 +50,7 @@ the 2024 experiment (kept, unused; users holds the legal_* columns).
 
 **Identity:** the browser makes a random token (localStorage `mc.token`) and sends it with every call. Never return tokens.
 
-**Mesh:** full mesh; the browser with the smaller PeerJS id dials (`peer.call`), the other answers. syncMesh() after every
-poll: dial missing peers (5 s backoff), drop conns whose peer id vanished, failed, or got no stream in 20 s.
+**Mesh:** full mesh of RTCPeerConnections keyed by pid; the browser with the smaller pid dials. Handshake = ONE offer note + ONE answer note per pair (non-trickle: wait up to 3 s for all ICE candidates), sent with `signal`, delivered in the `state` poll (`signals` key) and, while a dialler waits, by `inbox` every 0.6 s. Notes carry `call` (sender's per-visit call id, = players.peer_id) and `target` (receiver's), so notes for an old visit are ignored. ~7 s to connect 8 players. The answerer adds its tracks only after setRemoteDescription (c.added gates route()). syncMesh() after every poll: dial missing players (6 s backoff), drop conns whose call id changed (after 8 s), failed, or never connected in 25 s.
 
 **Routing (privacy at night):** `sends(from, to, view)` in mafia.js; per connection `route()` swaps each transceiver's sender
 track for the local track or `null`. Done right after call()/answer() (before media flows) and on every view. Receivers draw
@@ -75,7 +73,7 @@ covers (asleep / ghost / connecting / camera off) from the same rule. The server
 - Headless Chrome needs `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required`
   (and background-throttling off) for the mesh test. Same-origin tabs share localStorage = same player, hence one port per tab.
 - Full-page phone screenshots draw the fixed dock mid-page; that's the capture, not the layout.
-- Signalling is PeerJS's free public server. Relays (TURN) are **Cloudflare Realtime TURN** since 2026-11-08 (PeerJS's
+- Signalling is Anvil itself (see Mesh). Relays (TURN) are **Cloudflare Realtime TURN** since 2026-11-08 (PeerJS's
   free TURN hosts stopped resolving, so phones on mobile data / isolated Wi-Fi never connected and kept redialling).
   The engine calls `ice` before `new Peer`; `a_ice` in game.py trades the app secrets `cf_turn_key_id` +
   `cf_turn_api_token` for 24 h logins (drops :53 URLs). No secrets or Cloudflare down = STUN only (direct connections).
@@ -83,7 +81,7 @@ covers (asleep / ghost / connecting / camera off) from the same rule. The server
 
 ## Privacy & Terms (legal kit)
 
-From `C:/Users/arkvi/Documents/CLAUDE/APP_MAKER/legal-kit`: change `apps/mafiacamp.json` there (providers peerjs + google_stun
+From `C:/Users/arkvi/Documents/CLAUDE/APP_MAKER/legal-kit`: change `apps/mafiacamp.json` there (providers cloudflare_turn + google_stun
 live in kit.json), `python -I build.py mafiacamp && python -I install.py mafiacamp`, commit and push here. Don't edit
 theme/assets/legal-kit.js, client_code/legal.py or server_code/legal_server.py here. The "Privacy & Terms" buttons use
 `data-lk-open="overview"`. No sign-up form (no accounts), so no consent tick box.
