@@ -1,6 +1,6 @@
 /* ark-music.js: the shared background-music player for Arkvital apps (canonical copy:
    APP_MAKER/media/public/ark-music.js; tools/music_sync.py copies it into each app).
-   The music files are on Firebase Hosting: https://arkvital-media.web.app/music/<slug>.mp3
+   The music files are on Cloudflare R2 (arkvital-media Worker): https://arkvital-media.addanapp.workers.dev/music/<slug>.mp3
    (track list and which app uses what: APP_MAKER/media/manifest.json). Set window.ARK_MEDIA_BASE first to move them.
 
    ArkMusic.play('dont-stress-out')            loop one track
@@ -19,7 +19,7 @@
    Browsers block sound until the first tap or key press; requests made before that start on the first gesture. */
 (function () {
   if (window.ArkMusic) return;
-  var BASE = (window.ARK_MEDIA_BASE || 'https://arkvital-media.web.app/') + 'music/';
+  var BASE = (window.ARK_MEDIA_BASE || 'https://arkvital-media.addanapp.workers.dev/') + 'music/';
   var ctx = null, master = null, useGraph = true;
   var vol = 0.6, duckLvl = 1, on = true, held = false, failFns = [];
   var want = null;          // last request {list, opts}
