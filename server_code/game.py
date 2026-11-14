@@ -841,7 +841,7 @@ def a_ice(p):
       "https://rtc.live.cloudflare.com/v1/turn/keys/%s/credentials/generate-ice-servers" % key_id.strip(),
       method="POST", json=True, data={"ttl": 86400}, timeout=8,
       headers={"Authorization": "Bearer " + token.strip()})
-    servers = r.get("iceServers") or []
+    servers = (r.get("iceServers") if isinstance(r, dict) else None) or []  # json=True gives a dict
     if isinstance(servers, dict):
       servers = [servers]
     # Browsers balk at port 53 (DNS) relay addresses; leave those out.
