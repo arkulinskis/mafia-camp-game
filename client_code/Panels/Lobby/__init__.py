@@ -52,9 +52,11 @@ class Lobby(LobbyTemplate):
                     panel.items = [{"key": name, "value": x, "label": _fmt(name, x), "on": x == s.get(name)}
                                    for x in CHOICES[name]]
                     state.refocus(panel, key)
-                for el, name in ((self.reveal_switch, "reveal_roles"), (self.prank_switch, "prankster")):
-                    el.classes["on"] = bool(s.get(name))
-                    state.set_attr(el, "aria-checked", "true" if s.get(name) else "false")
+                for el, name, default in ((self.reveal_switch, "reveal_roles", True), (self.prank_switch, "prankster", False),
+                                          (self.hot_switch, "hot_seat", True)):
+                    on = bool(s.get(name, default))
+                    el.classes["on"] = on
+                    state.set_attr(el, "aria-checked", "true" if on else "false")
             enough = present >= v.get("min_players", 3)
             self.start_button.enabled = enough
             self.start_button.text = ("🔥 Start the game (%d campers)" % present if enough else
@@ -72,6 +74,9 @@ class Lobby(LobbyTemplate):
 
     def prank_click(self, event):
         mc.act("settings", prankster=not (self._settings or {}).get("prankster"))
+
+    def hot_click(self, event):
+        mc.act("settings", hot_seat=not (self._settings or {}).get("hot_seat", True))
 
     @handle("invite_button", "click")
     def invite_button_click(self, **event_args):

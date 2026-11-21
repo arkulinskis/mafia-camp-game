@@ -13,6 +13,10 @@ A video party game for 3 to 10 friends, built on [Anvil](https://anvil.works). E
   - ghosts (players who are out, and late joiners) talk only with other ghosts.
 - **Roles:** the Mafia (1 for 3–5 players, 2 for 6–9, 3 for 10), Camp Nurse (protects one camper a night, not the same twice in a row), Ranger (investigates one camper a night), Campers, and an optional Prankster (7+, wins by getting voted out).
 - **Phases:** roles → night → dawn (the news) → day (talk; "Ready to vote" with a majority skips ahead) → vote (open votes, live tallies on the tiles, ties and "skip" send nobody home) → verdict → … until the Campers or the Mafia win.
+- **Hot seat (on by default):** each day starts with every living camper getting a short turn (8-20 s, seat order, the start rotates by day) to answer a prompt, their tile glowing; then open talk. Host switch in the lobby.
+- **Ghost bets:** campers who are out tap a tile (or "nobody") to bet who the living send home; the verdict says how many ghosts saw it coming, and the Ghost Oracle shows their scores at game over.
+- **Camp superlatives:** up to 4 awards at game over from what happened (Smoothest liar, Sharpest eye, Hero of the night, Bloodhound, Most suspected, Followed the crowd) plus "Copy the camp story" for the group chat.
+- **Away-proof timing:** campers who are away (no poll for 20 s) don't hold up an early night end, the ready majority or the vote bell.
 - **Host controls:** talk/night/vote times, reveal roles on death, Prankster on/off, skip ahead, send a player home, play again. If the host disappears, the longest-present player takes over.
 - **Look:** the sky follows the game (dusk campfire, starry night, dawn, daylight), speaking glow on tiles, sleeping/ghost covers, phase chimes, confetti for the winners, a tent-under-the-moon icon and matching loading spinner. Phone first; desktop puts the panel beside the grid.
 - Privacy & Terms from the shared Arkvital legal kit (camera/mic, peer-to-peer video, Cloudflare relay, 24-hour camp clean-up).

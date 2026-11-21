@@ -28,7 +28,9 @@ AWAY_AFTER = 20        # seconds without a poll: shown as "away"
 DROP_AFTER = 45        # seconds without a poll in the lobby: removed from the camp
 ROOM_MAX_AGE_H = 24    # rooms untouched this long are cleaned up
 FIXED = {"roles": 12, "dawn": 9, "verdict": 9}
-DEFAULT_SETTINGS = {"day_seconds": 120, "night_seconds": 40, "vote_seconds": 35, "reveal_roles": True, "prankster": False}
+DEFAULT_SETTINGS = {"day_seconds": 120, "night_seconds": 40, "vote_seconds": 35, "reveal_roles": True, "prankster": False,
+                    "hot_seat": True}
+BOOL_SETTINGS = ("reveal_roles", "prankster", "hot_seat")
 ALLOWED = {"day_seconds": (60, 90, 120, 180, 240, 300), "night_seconds": (25, 40, 60), "vote_seconds": (25, 35, 50)}
 ROLES = ("mafia", "nurse", "ranger", "prankster", "camper")
 
@@ -56,6 +58,20 @@ EXILES = [
   "is banished to the far side of the lake",
   "is put in a canoe and gently pushed away",
   "has to go home and explain this to their parents",
+]
+
+
+# The hot seat: at the start of each day every living camper gets a short turn in the spotlight (2026-11-20).
+HOT_TURN_MIN, HOT_TURN_MAX, HOT_SHARE = 8, 20, 0.6   # seconds per turn; the round takes at most 60% of the day
+HOT_PROMPTS = [
+  "Who do you suspect, and why?",
+  "Who has been too quiet? Say a name.",
+  "Defend yourself: why should nobody vote for you?",
+  "Whose story doesn't add up?",
+  "Who would you trust with your marshmallows?",
+  "If you had to vote right now, who would it be?",
+  "What did last night's news tell you?",
+  "Who changed their mind too fast yesterday?",
 ]
 
 
@@ -207,9 +223,82 @@ def vote_result(game):
   return leaders[0], tally
 
 
-def _night_done(game):
-  """Everyone with a night job has done it (and the Mafia agree)."""
-  alive = [pid for pid, a in game["alive"].items() if a]
+def hot_seat(order, day, day_seconds, elapsed):
+  """Whose turn it is in the hot seat. order = living campers in seat order. Returns {"pid", "left", "turn", "n",
+  "of", "prompt"} during the round, {"open": True} after it, or None when nobody can sit in it."""
+  n = len(order)
+  if n < 2:
+    return None
+  turn = max(HOT_TURN_MIN, min(HOT_TURN_MAX, int(day_seconds * HOT_SHARE / n)))
+  start = (max(1, day) - 1) % n
+  ring = order[start:] + order[:start]
+  i = int(max(0.0, elapsed) // turn)
+  if i >= n:
+    return {"open": True}
+  return {"pid": ring[i], "left": round(turn - (max(0.0, elapsed) - i * turn), 1), "turn": turn, "n": i + 1, "of": n,
+          "prompt": HOT_PROMPTS[(day * 3 + i) % len(HOT_PROMPTS)]}
+
+
+def superlatives(game):
+  """Up to 4 end-of-game awards, only from what happened: [{"icon", "title", "pid", "why"}]."""
+  roles = game.get("roles") or {}
+  alive = game.get("alive") or {}
+  log = game.get("vote_log") or []
+  got, at_mafia, with_crowd = {}, {}, {}
+  for day in log:
+    votes = day.get("votes") or {}
+    out = day.get("out")
+    for voter, t in votes.items():
+      if t and t != "skip":
+        got[t] = got.get(t, 0) + 1
+        if roles.get(t) == "mafia" and roles.get(voter) != "mafia":
+          at_mafia[voter] = at_mafia.get(voter, 0) + 1
+        if out and t == out:
+          with_crowd[voter] = with_crowd.get(voter, 0) + 1
+  awards = []
+  mafia = sorted((pid for pid, r in roles.items() if r == "mafia"), key=lambda pid: (got.get(pid, 0), not alive.get(pid), pid))
+  if mafia and log:
+    best = mafia[0]
+    n = got.get(best, 0)
+    if n == 0:
+      awards.append({"icon": "🎭", "title": "Smoothest liar", "pid": best, "why": "Mafia, and never got a single vote."})
+    elif alive.get(best):
+      awards.append({"icon": "🎭", "title": "Smoothest liar", "pid": best, "why": "Mafia, and still at camp at the end."})
+  if at_mafia:
+    best = sorted(at_mafia, key=lambda pid: (-at_mafia[pid], pid))[0]
+    k = at_mafia[best]
+    awards.append({"icon": "🔍", "title": "Sharpest eye", "pid": best,
+                   "why": "Voted for the Mafia %s." % ("once" if k == 1 else "%d times" % k)})
+  saves = game.get("saves") or {}
+  for pid, k in sorted(saves.items()):
+    if k:
+      awards.append({"icon": "🩹", "title": "Hero of the night", "pid": pid,
+                     "why": "Saved %s from the Mafia." % ("a camper" if k == 1 else "%d campers" % k)})
+      break
+  found = [pid for pid, cs in (game.get("checks") or {}).items() if any(c.get("mafia") for c in cs)]
+  if found:
+    awards.append({"icon": "🔦", "title": "Bloodhound", "pid": sorted(found)[0], "why": "The Ranger's flashlight found the Mafia."})
+  innocent = [pid for pid in got if roles.get(pid) not in ("mafia", None) and got[pid] >= 2]
+  if innocent:
+    best = sorted(innocent, key=lambda pid: (-got[pid], pid))[0]
+    awards.append({"icon": "😇", "title": "Most suspected (and innocent)", "pid": best, "why": "%d votes, all wrong." % got[best]})
+  crowd = [pid for pid, k in with_crowd.items() if k >= 2]
+  if crowd:
+    best = sorted(crowd, key=lambda pid: (-with_crowd[pid], pid))[0]
+    awards.append({"icon": "🐑", "title": "Followed the crowd", "pid": best,
+                   "why": "Voted with the winning side %d times." % with_crowd[best]})
+  return awards[:4]
+
+
+def _present(room, now=None):
+  """pids of campers who polled recently (not away)."""
+  now = now or _now()
+  return {p["pid"] for p in _players(room) if not _away(p, now)}
+
+
+def _night_done(game, present=None):
+  """Everyone with a night job has done it (and the Mafia agree). Away players (not in `present`) don't hold it up."""
+  alive = [pid for pid, a in game["alive"].items() if a and (present is None or pid in present)]
   roles = game["roles"]
   night = game["night"]
   mafia = [pid for pid in alive if roles.get(pid) == "mafia"]
@@ -249,6 +338,11 @@ def _advance(room, rng=random):
 
   def finish(kind):
     game["winner"] = kind
+    try:
+      game["awards"] = superlatives(game)
+    except Exception as e:  # an award must never stop the game from ending
+      print("[awards]", repr(e)[:200])
+      game["awards"] = []
     text = {"town": "The Campers caught every last Mafia member. Camp is saved!",
             "mafia": "The Mafia outnumber the Campers. Camp Moonlake is theirs now.",
             "prankster": "The Prankster got themselves voted out. That was the plan all along!"}[kind]
@@ -279,6 +373,11 @@ def _advance(room, rng=random):
       game["result"] = {"kind": "dawn", "pid": victim, "role": role if reveal else None, "text": text}
     elif saved:
       game["result"] = {"kind": "dawn", "pid": None, "saved": True, "text": rng.choice(SAVES)}
+      for pid, role in game["roles"].items():
+        if role == "nurse":
+          saves = game.get("saves") or {}
+          saves[pid] = saves.get(pid, 0) + 1
+          game["saves"] = saves
     else:
       game["result"] = {"kind": "dawn", "pid": None, "text": rng.choice(QUIET)}
     _event(game, day, "dawn", game["result"]["text"])
@@ -304,6 +403,19 @@ def _advance(room, rng=random):
 
   if phase == "vote":
     out, tally = vote_result(game)
+    game["vote_log"] = (game.get("vote_log") or [])[-19:] + [{"day": day, "votes": dict(game.get("votes") or {}), "out": out}]
+    bets = game.get("bets") or {}
+    oracle = game.get("oracle") or {}
+    right = 0
+    for ghost, guess in bets.items():
+      o = oracle.get(ghost) or {"right": 0, "tries": 0}
+      o["tries"] += 1
+      if guess == (out or "skip"):
+        o["right"] += 1
+        right += 1
+      oracle[ghost] = o
+    game["oracle"] = oracle
+    game["bets"] = {}
     if out:
       game["alive"][out] = False
       role = game["roles"].get(out)
@@ -315,6 +427,9 @@ def _advance(room, rng=random):
     else:
       why = "It's a tie" if tally and any(t != "skip" for t in tally) else "The camp couldn't decide"
       game["result"] = {"kind": "verdict", "pid": None, "text": "%s, so nobody is sent home today." % why, "tally": tally}
+    if bets:
+      game["result"]["seers"] = right
+      game["result"]["bettors"] = len(bets)
     _event(game, day, "verdict", game["result"]["text"])
     room["game"] = game
     _set_phase(room, "verdict", FIXED["verdict"])
@@ -399,6 +514,20 @@ def _view(room, me):
     my["ready"] = my_pid in (game.get("ready") or [])
   if phase == "vote":
     my["vote"] = (game.get("votes") or {}).get(my_pid)
+  if i_am_ghost and my_pid in roles and phase in ("day", "vote", "verdict"):
+    my["bet"] = (game.get("bets") or {}).get(my_pid)
+  hot = None
+  settings = room["settings"] or DEFAULT_SETTINGS
+  if phase == "day" and settings.get("hot_seat", True):
+    order = [x["pid"] for x in players if x["playing"] and x["alive"] and not x["away"]]
+    started = _aware(room["phase_started"])
+    hot = hot_seat(order, room["day"] or 1, settings.get("day_seconds", 120),
+                   (now - started).total_seconds() if started else 0.0)
+  extra = {}
+  if phase == "over":
+    extra["awards"] = game.get("awards") or []
+    extra["oracle"] = [{"pid": pid, "right": o.get("right", 0), "tries": o.get("tries", 0)}
+                       for pid, o in sorted((game.get("oracle") or {}).items(), key=lambda kv: -kv[1].get("right", 0))]
   counts = {"mafia_total": game.get("mafia_total") or 0}
   if in_game:
     counts["alive"] = sum(1 for a in alive.values() if a)
@@ -408,7 +537,7 @@ def _view(room, me):
     "settings": room["settings"] or DEFAULT_SETTINGS, "host": room["host"], "me": my_pid, "my": my,
     "players": players, "result": game.get("result") if phase in ("dawn", "day", "vote", "verdict", "over") else None,
     "events": (game.get("events") or [])[-30:], "winner": game.get("winner"), "counts": counts,
-    "min_players": MIN_PLAYERS, "max_players": MAX_PLAYERS,
+    "min_players": MIN_PLAYERS, "max_players": MAX_PLAYERS, "hot": hot, **extra,
   }
 
 
@@ -631,7 +760,7 @@ def a_settings(p, room, me):
       if v not in allowed:
         raise ApiError("That time isn't one of the choices.")
       s[k] = v
-  for k in ("reveal_roles", "prankster"):
+  for k in BOOL_SETTINGS:
     if k in p:
       s[k] = bool(p[k])
   room["settings"] = s
@@ -687,7 +816,7 @@ def a_act(p, room, me):
       raise ApiError("You already know you're innocent.")
     game["night"]["ranger"] = target
   room["game"] = game
-  if _night_done(game):
+  if _night_done(game, _present(room)):
     _hurry(room)
   _bump(room)
 
@@ -705,8 +834,9 @@ def a_ready(p, room, me):
     ready.append(pid)
   game["ready"] = ready
   room["game"] = game
-  alive = sum(1 for a in game["alive"].values() if a)
-  if len(ready) * 2 > alive:
+  here = _present(room) | {pid}
+  alive = sum(1 for x, a in game["alive"].items() if a and x in here)  # away campers don't block an early vote
+  if len([x for x in ready if x in here]) * 2 > alive:
     _advance(room)
   else:
     _bump(room)
@@ -733,9 +863,32 @@ def a_vote(p, room, me):
     votes[pid] = target
   game["votes"] = votes
   room["game"] = game
-  alive = [x for x, a in game["alive"].items() if a]
+  here = _present(room) | {pid}
+  alive = [x for x, a in game["alive"].items() if a and x in here]  # away campers don't hold up the bell
   if all(x in votes for x in alive):
     _hurry(room)
+  _bump(room)
+
+
+@_mutation
+def a_bet(p, room, me):
+  """Ghost bets: a camper who is out guesses who the living will send home today ('skip' = nobody)."""
+  if room["phase"] not in ("day", "vote"):
+    raise ApiError("Ghost bets are open during the day and the vote.")
+  game = room["game"]
+  pid = me["pid"]
+  if pid not in (game.get("roles") or {}) or game["alive"].get(pid):
+    raise ApiError("Only ghosts can bet. You're still very much alive!")
+  target = p.get("target")
+  if target not in (None, "skip") and not game["alive"].get(target):
+    raise ApiError("Pick someone who is still at camp.")
+  bets = game.get("bets") or {}
+  if target is None:
+    bets.pop(pid, None)
+  else:
+    bets[pid] = target
+  game["bets"] = bets
+  room["game"] = game
   _bump(room)
 
 
@@ -858,7 +1011,7 @@ def a_ice(p):
 
 ACTIONS = {"create": a_create, "join": a_join, "state": a_state, "leave": a_leave, "settings": a_settings,
            "start": a_start, "act": a_act, "ready": a_ready, "vote": a_vote, "skip": a_skip, "again": a_again,
-           "kick": a_kick, "ice": a_ice, "signal": a_signal, "inbox": a_inbox}
+           "kick": a_kick, "bet": a_bet, "ice": a_ice, "signal": a_signal, "inbox": a_inbox}
 
 
 @anvil.server.callable

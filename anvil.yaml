@@ -275,9 +275,9 @@ native_deps:
     <link rel="apple-touch-icon" href="_/theme/apple-touch-icon.png?v=371ffeeaaf">
     <script src="_/theme/app-kit.js?v=a1d0d2a93f"></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=8f508d76cd">
-    <link rel="stylesheet" href="_/theme/app.css?v=776705d7a7">
+    <link rel="stylesheet" href="_/theme/app.css?v=6410008758">
     <script src="_/theme/ark-music.js?v=39180862e8"></script>
-    <script src="_/theme/mc-engine.js?v=8b3e143ef4"></script>
+    <script src="_/theme/mc-engine.js?v=6654c95bd5"></script>
     <script>
     /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
     (function () {

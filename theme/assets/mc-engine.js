@@ -566,6 +566,11 @@
   // ---- tiles
   function pickMode(v) {
     var my = v.my, m = me();
+    if (m && my.ghost && my.role && (v.phase === 'day' || v.phase === 'vote')) {
+      // ghost bets (2026-11-20): guess who the living send home today
+      return { action: 'bet', selected: my.bet && my.bet !== 'skip' ? my.bet : null, verb: '👻 Bet', chosen: 'Your bet',
+        can: function (p) { return p.alive && p.playing; } };
+    }
     if (!m || !my.alive || my.ghost) return null;
     if (v.phase === 'night' && (my.role === 'mafia' || my.role === 'nurse' || my.role === 'ranger')) {
       var team = my.team || [];
@@ -612,6 +617,7 @@
     if (!mode) return;
     var target = mode.selected === pid ? null : pid;
     if (mode.action === 'vote') act('vote', { target: target });
+    else if (mode.action === 'bet') act('bet', { target: target });
     else act('act', { target: target });
   }
   function renderTiles() {
@@ -638,6 +644,7 @@
       el.classList.toggle('me', mine);
       el.classList.toggle('dead', v.phase !== 'lobby' && !p.alive);
       el.classList.toggle('away', !!p.away && !mine);
+      el.classList.toggle('hot', !!(v.phase === 'day' && v.hot && v.hot.pid === p.pid));
       var asleep = !visible && p.alive && v.phase === 'night';
       el.classList.toggle('asleep', asleep);
       el.classList.toggle('hidden-media', !visible);
@@ -667,6 +674,7 @@
       if (v.phase === 'over' && p.role && !p.alive) tags.push(tag(ROLES[p.role].icon + ' ' + ROLES[p.role].name, p.role));
       if (picks[p.pid]) tags.push(tag('🔪 ' + picks[p.pid].join(', '), 'mafia'));
       if (checks[p.pid] !== undefined && p.pid !== v.me) tags.push(tag(checks[p.pid] ? '🔦 Mafia!' : '🔦 Innocent', checks[p.pid] ? 'mafia' : 'ok'));
+      if (v.phase === 'day' && v.hot && v.hot.pid === p.pid) tags.push(tag('🔥 Hot seat', 'hot'));
       if (votes[p.pid]) tags.push(tag('🗳️ ' + votes[p.pid].length, 'vote', votes[p.pid].join(', ')));
       var tg = el.querySelector('.tags');
       tg.innerHTML = '';

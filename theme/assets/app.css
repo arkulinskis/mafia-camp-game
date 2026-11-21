@@ -505,3 +505,26 @@ anvil-dropzone { display: contents; }  /* the App Server 1.18 wraps named elemen
 .anvil-modal-dialog.anvil-role-app-dialog:not(.anvil-modal-lg) { width: min(calc(100vw - 24px), 480px); max-width: none; }
 .invite-dlg { display: grid; gap: 12px; }
 .dlg-row { display: flex; justify-content: flex-end; }
+
+/* the hot seat (day): the camper whose turn it is glows; the day panel says whose turn and what to answer */
+.tile.hot { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent); animation: hotglow 1.6s var(--ease-in-out) infinite; }
+@keyframes hotglow { 50% { box-shadow: 0 0 0 3px var(--accent), 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent); } }
+.tag.hot { background: var(--accent); color: var(--on-accent); }
+.hot-box { display: grid; gap: 4px; background: color-mix(in srgb, var(--accent) 14%, var(--panel2)); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 14px; padding: 11px 13px; }
+.anvil-role-hot-who { font-weight: 800; font-size: 15px; }
+.anvil-role-hot-q { font-size: 15px; line-height: 1.4; }
+.hot-box.open { background: var(--panel2); border-color: var(--line); }
+
+/* ghost bets (day + vote) and the end-of-game awards + Ghost Oracle */
+.ghost-bet { display: grid; gap: 8px; background: var(--panel2); border: 1px dashed var(--line); border-radius: 14px; padding: 11px 13px; }
+.ghost-bet h3 { font-size: 16px; }
+.awards { display: grid; gap: 8px; text-align: left; }
+.awards h3, .oracle h3 { font-size: 16px; text-align: left; }
+.anvil-role-award-list > div { display: grid; gap: 6px; }
+.award { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; background: var(--panel2); border-radius: 12px; padding: 9px 11px; }
+.award-ic { grid-row: span 2; font-size: 24px; line-height: 1; }
+.anvil-role-award-t { font-weight: 800; font-size: 14px; }
+.anvil-role-award-why { font-size: 14px; color: var(--muted); }
+.oracle { display: grid; gap: 6px; text-align: left; }
+.anvil-role-oracle-t { font-size: 14px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .tile.hot { animation: none; } }

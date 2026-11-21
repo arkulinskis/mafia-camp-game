@@ -19,6 +19,7 @@
       <anvil-component type="RepeatingPanel" name="vote_chips" prop:item_template="mafia_camp_game.Items.Chip" prop:role='["chips"]'></anvil-component></div>
     <button type="button" class="switch" role="switch" anvil:name="reveal_switch" anvil:on-dom:click="self.reveal_click"><i></i><span>Reveal roles when someone is out</span></button>
     <button type="button" class="switch" role="switch" anvil:name="prank_switch" anvil:on-dom:click="self.prank_click"><i></i><span>Add the Prankster 🤡 (7+ players)</span></button>
+    <button type="button" class="switch" role="switch" anvil:name="hot_switch" anvil:on-dom:click="self.hot_click"><i></i><span>Hot seat: everyone gets a short turn at the start of each day 🔥</span></button>
   </div>
   <div class="start" anvil:name="start_box">
     <anvil-component type="Button" name="start_button" prop:role='["btn", "primary", "big"]'></anvil-component>
@@ -37,6 +38,10 @@
       <li>🌅 Dawn: find out who was attacked.</li>
       <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
       <li>☀️ Day: talk on video, then tap a tile to vote. Most votes is sent home. A tie sends nobody.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>🔥 Hot seat: each day starts with everyone getting a few seconds to answer a question. Then it's open talk.</li>
+      <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+      <li>👻 Out of the game? Watch, whisper with the other ghosts and bet on who goes home next.</li>
       <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
       <li>🏁 The Campers win when all the Mafia are gone. The Mafia win when they are as many as everyone else.</li>
     </ul>

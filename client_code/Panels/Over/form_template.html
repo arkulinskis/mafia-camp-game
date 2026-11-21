@@ -4,6 +4,17 @@
     <anvil-component type="Label" name="you" prop:role='["over-you"]'></anvil-component>
     <anvil-component type="RepeatingPanel" name="reveal" prop:item_template="mafia_camp_game.Items.RevealRow" prop:role='["reveal"]'></anvil-component>
   </div>
+  <div class="awards" anvil:name="awards_box">
+    <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+    <h3>🏅 Camp superlatives</h3>
+    <anvil-component type="RepeatingPanel" name="awards" prop:item_template="mafia_camp_game.Items.Award" prop:role='["award-list"]'></anvil-component>
+  </div>
+  <div class="oracle" anvil:name="oracle_box">
+    <!-- design-ok: emoji-icon (the camp's emoji are the game's picture language, as in the original) -->
+    <h3>👻 The Ghost Oracle</h3>
+    <anvil-component type="Label" name="oracle" prop:role='["oracle-t"]'></anvil-component>
+  </div>
+  <anvil-component type="Button" name="copy_button" prop:text="📋 Copy the camp story" prop:role='["btn"]'></anvil-component>
   <anvil-component type="Button" name="again_button" prop:text="🔥 Back to the campfire (play again)" prop:role='["btn", "primary", "big"]'></anvil-component>
   <anvil-component type="Label" name="wait_note" prop:role='["note"]'></anvil-component>
 </div>

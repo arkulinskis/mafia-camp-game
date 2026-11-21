@@ -90,3 +90,10 @@ theme/assets/legal-kit.js, client_code/legal.py or server_code/legal_server.py h
 
 `PHASE_MUSIC` + `music(phase)` in mafia.js, called from setView on a phase change and renderHome; volume 0.22, ducked in day/vote; the Sounds button mutes it. Bump `mafia.js?v=` in anvil.yaml when mafia.js changes. Player = `window.ArkMusic` (copy written by `APP_MAKER/tools/music_sync.py`; don't edit the copy, edit `APP_MAKER/media/public/ark-music.js` and re-sync). Track slugs and feel: `APP_MAKER/media/manifest.json`; hosting: `APP_MAKER/media/README.md`. Test playback in headless Chrome with `--autoplay-policy=no-user-gesture-required` and read `ArkMusic.state()`.
 - renderPanel() rebuilds the panel on every 2 s poll; entrance animations (role card flip, news rise) play only when phase|day changes (`.panel.no-anim`). New animated panel bits: add them to that rule in mafia.css. mesh_test checks it.
+
+## Round 2026-11-20: hot seat, ghost bets, superlatives
+- Hot seat: `hot_seat()` (pure) in game.py, computed in `_view` during day from `phase_started` (no writes); setting `hot_seat` (BOOL_SETTINGS, default on); view key `hot`; Panels/Day shows it, mc-engine renderTiles adds `.tile.hot` + tag.
+- Ghost bets: action `bet` (dead playing campers, day/vote; target pid or 'skip'); `game.bets` scored into `game.oracle` in `_advance` vote branch; `result.seers/bettors`; Components/GhostBet on Day + Vote; engine pickMode 'bet'.
+- Superlatives: `game.vote_log` + `game.saves` recorded; `superlatives(game)` (pure) at `finish` -> `game.awards`; view `awards` + `oracle` at over; Items/Award, Over panel copy button (clipboard, TextArea fallback).
+- `_present(room)`: `_night_done(game, present)`, a_ready majority and a_vote hurry ignore away campers.
+- Gotcha: after editing assets, bump only the changed `?v=` hashes by hand: `tools/assets.py` re-dumps the whole anvil.yaml in a different YAML style.

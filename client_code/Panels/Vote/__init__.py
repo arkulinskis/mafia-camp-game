@@ -30,6 +30,7 @@ class Vote(VoteTemplate):
             self.mine.text = "" if self._vote else "You haven't voted yet."
         self.count.text = "%d of %d have voted." % (voted, len(alive))
         self.tally.show_for(v)
+        self.ghost_bet.show_for(v)
         self.notebook.show_for(v)
 
     @handle("skip_button", "click")
